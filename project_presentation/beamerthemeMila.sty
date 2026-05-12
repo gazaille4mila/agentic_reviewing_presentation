@@ -1,0 +1,166 @@
+\ProvidesPackage{beamerthemeMila}[2026/02/02 Mila Beamer Theme]
+
+\RequirePackage{graphicx}
+\RequirePackage{booktabs}
+\RequirePackage{tcolorbox}
+\RequirePackage{xcolor}
+\RequirePackage{fontawesome5}
+\RequirePackage{tikz}
+\RequirePackage{fontspec}
+
+%% Logo asset used by template macros.
+\graphicspath{{assets/}}
+\newcommand{\milaWhiteLogoPath}{mila_logo_white.png}
+\newcommand{\milaPurpleLogoPath}{mila_logo_purple.png}
+
+%% =============================================================================
+%% LINE TOGGLES (set to true/false to show/hide lines)
+%% =============================================================================
+\newif\ifmilaverticalline
+\newif\ifmilahorizontalline
+\milaverticallinetrue    % Enable vertical line by default
+\milahorizontallinetrue  % Enable horizontal line by default
+
+%% Commands to enable/disable lines
+\newcommand{\milaShowVerticalLine}{\milaverticallinetrue}
+\newcommand{\milaHideVerticalLine}{\milaverticallinefalse}
+\newcommand{\milaShowHorizontalLine}{\milahorizontallinetrue}
+\newcommand{\milaHideHorizontalLine}{\milahorizontallinefalse}
+\newcommand{\milaShowLines}{\milaverticallinetrue\milahorizontallinetrue}
+\newcommand{\milaHideLines}{\milaverticallinefalse\milahorizontallinefalse}
+
+%% Prefer brand/system fonts first, then TeX-distributed sans fallbacks for portability.
+\IfFontExistsTF{Work Sans}{
+    \setmainfont{Work Sans}[AutoFakeBold=4]
+    \setsansfont{Work Sans}[AutoFakeBold=4]
+}{
+    \IfFontExistsTF{Helvetica Neue}{
+        \setmainfont{Helvetica Neue}
+        \setsansfont{Helvetica Neue}
+    }{
+        \IfFontExistsTF{TeX Gyre Heroes}{
+            \setmainfont{TeX Gyre Heroes}
+            \setsansfont{TeX Gyre Heroes}
+        }{
+            \setmainfont{Latin Modern Sans}
+            \setsansfont{Latin Modern Sans}
+        }
+    }
+}
+
+%% =============================================================================
+%% MILA COLOR PALETTE
+%% =============================================================================
+\definecolor{milaPurple}{HTML}{662E7D}
+\definecolor{milaPurpleLight}{HTML}{CEB3D3}
+\definecolor{milaTeal}{HTML}{59B9D2}
+\definecolor{milaTealLight}{HTML}{A9DAE9}
+\definecolor{milaGreen}{HTML}{3FAE82}
+\definecolor{milaGreenLight}{HTML}{B9DBC1}
+\definecolor{milaOrange}{HTML}{F05629}
+\definecolor{milaOrangeLight}{HTML}{F3B692}
+\definecolor{milaRed}{HTML}{D41647}
+\definecolor{milaRedLight}{HTML}{EC9191}
+\definecolor{milaYellow}{HTML}{F9B40D}
+\definecolor{milaYellowLight}{HTML}{F4DA92}
+\definecolor{milaDark}{HTML}{363A44}
+\definecolor{milaGray}{HTML}{A0AAB7}
+\definecolor{milaLightGray}{HTML}{DEDEDE}
+\definecolor{milaBgLight}{HTML}{F4F5F1}
+\definecolor{milaBgCyan}{HTML}{ECF6F6}
+
+%% =============================================================================
+%% BEAMER THEME SETTINGS
+%% =============================================================================
+\usetheme{default}
+
+\setbeamercolor{structure}{fg=milaPurple}
+\setbeamercolor{title}{fg=milaPurple}
+\setbeamercolor{frametitle}{fg=milaPurple}
+\setbeamercolor{normal text}{fg=milaDark}
+\setbeamercolor{itemize item}{fg=milaPurple}
+\setbeamercolor{itemize subitem}{fg=milaTeal}
+\setbeamercolor{itemize subsubitem}{fg=milaGreen}
+\setbeamercolor{section in toc}{fg=milaPurple}
+\setbeamercolor{subsection in toc}{fg=milaDark}
+
+\setbeamerfont{title}{size=\LARGE,family=\sffamily,series=\mdseries}
+\setbeamerfont{frametitle}{size=\huge,family=\sffamily,series=\mdseries}
+
+\setbeamertemplate{itemize item}{\textbullet}
+\setbeamertemplate{itemize subitem}{\textbullet}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{section in toc}[sections numbered]
+\setbeamertemplate{subsection in toc}[subsections numbered]
+
+%% Frame margins: content starts right of vertical line
+\setbeamersize{text margin left=14mm, text margin right=8mm}
+
+%% Custom frametitle with left padding to clear vertical line
+\setbeamertemplate{frametitle}{
+    \vspace{3mm}
+    {\usebeamerfont{frametitle}\usebeamercolor[fg]{frametitle}\hspace{-2mm}\insertframetitle}
+}
+
+%% Background for content frames with perpendicular lines
+\setbeamertemplate{background}{
+    \begin{tikzpicture}[remember picture,overlay]
+        % Light background
+        \fill[milaBgLight] (current page.south west) rectangle (current page.north east);
+        % Vertical line (left side, full height) - thin 0.5mm
+        \ifmilaverticalline
+            \fill[milaPurple] ([xshift=8mm]current page.south west) rectangle ([xshift=8.2mm]current page.north west);
+        \fi
+        % Horizontal line (bottom, full width) - thin 0.5mm
+        \ifmilahorizontalline
+            \fill[milaPurple] ([yshift=8mm]current page.south west) rectangle ([yshift=8.2mm]current page.south east);
+        \fi
+    \end{tikzpicture}
+}
+
+%% =============================================================================
+%% FOOTER WITH PAGE NUMBER AND LOGO
+%% =============================================================================
+\newcommand{\milafooter}{
+    \setbeamertemplate{footline}{
+        \begin{tikzpicture}[remember picture,overlay]
+            % Page number (left of vertical line)
+            \node[anchor=south west, xshift=2.5mm, yshift=2.5mm] at (current page.south west) {
+                \textcolor{milaPurple}{\tiny\insertframenumber}
+            };
+            % Mila logo (bottom right)
+            \node[anchor=south east, xshift=-6mm, yshift=-1mm] at (current page.south east) {
+                \includegraphics[height=8mm]{\milaPurpleLogoPath}
+            };
+        \end{tikzpicture}
+    }
+}
+
+%% =============================================================================
+%% CUSTOM BOXES
+%% =============================================================================
+
+\newtcolorbox{notebox}{
+    colback=milaBgCyan,
+    colframe=milaTeal,
+    boxrule=0.5pt,
+    arc=2mm,
+    left=3mm,
+    right=3mm,
+    top=2mm,
+    bottom=2mm,
+    fontupper=\small
+}
+
+%% =============================================================================
+%% CUSTOM COMMANDS
+%% =============================================================================
+
+% Metadata line for samples
+\newcommand{\metadata}[2]{%
+    \textcolor{milaGray}{\scriptsize\faCalendar\ #1 \hspace{1em} \faDesktop\ #2}%
+}
+
+\input{slide_templates.tex}
+
+\endinput

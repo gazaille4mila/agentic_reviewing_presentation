@@ -1,0 +1,191 @@
+% !TEX program = xelatex
+\documentclass[aspectratio=169]{beamer}
+% # TODO:
+% French ?
+\usepackage{beamerthemeMila}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{array}
+\usepackage[backend=biber,style=numeric,sorting=none]{biblatex}
+\addbibresource{references.bib}
+\newcommand{\tablebf}[1]{{\addfontfeatures{FakeBold=80}\bfseries #1}}
+
+\title{Mila Theme Template Presentation}
+\author{Template Author}
+\date{\today}
+\milafooter
+
+\begin{document}
+
+\milatitleslide
+    {Mila Beamer Theme Template}
+    {Date} % Date \today
+    {Equation, Vectorized image, and Slide Macro Showcase}
+
+\begin{frame}{Overview}
+    \tableofcontents
+\end{frame}
+
+\milasectionslide
+    {milaTeal}
+    {1.0}
+    {Mathematics}
+    {Complex equations with clear term explanations}
+
+\begin{frame}{Complex Equation Rendering}
+\small
+\begin{align}
+\mathcal{L}(\theta,\phi) =
+&\underbrace{\mathbb{E}_{q_{\phi}(z\mid x)}[\log p_{\theta}(x\mid z)]}_{\text{Reconstruction}} \notag - \beta \underbrace{D_{\mathrm{KL}}\!\left(q_{\phi}(z\mid x)\,\|\,p(z)\right)}_{\text{Latent regularization}}
++ \lambda \lVert \theta \rVert_2^2
+\end{align}
+
+\begin{notebox}
+\textbf{Term legend}
+\begin{itemize}
+    \item \(x\): observed input data, \(z\): latent variable.
+    \item \(q_{\phi}(z\mid x)\): encoder distribution parameterized by \(\phi\).
+    \item \(p_{\theta}(x\mid z)\): decoder likelihood parameterized by \(\theta\).
+    \item \(D_{\mathrm{KL}}\): divergence to prior \(p(z)\), weighted by \(\beta\).
+    \item \(\lambda \lVert \theta \rVert_2^2\): \(L_2\) regularization for parameter stability.
+\end{itemize}
+\end{notebox}
+\end{frame}
+
+\begin{frame}{Results table example}
+\footnotesize
+\centering
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcc}
+\toprule
+\tablebf{Model} & \tablebf{ImageNet (\%) \(\uparrow\)} & \tablebf{MS COCO AP (\%) \(\uparrow\)} \\
+\midrule
+ResNet-152 & 78.3 & 44.9 \\
+ViT-H/14 & \tablebf{90.5} & 58.7 \\
+SwinV2-G + Cascade Mask R-CNN & 83.2 & \tablebf{63.1} \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.6em}
+\begin{itemize}
+    \item Best values are highlighted in bold on a per-benchmark (column-wise) basis.
+\end{itemize}
+\end{frame}
+
+\milasectionslide
+    {milaOrange}
+    {2.0}
+    {Visual Content}
+    {Raster image rendering and fully vectorized graphics}
+
+\milatwocolumnslide
+    {Image Rendering (Raster)}
+    {0.55}
+    {0.42}
+    {
+        \includegraphics[width=\linewidth]{\milaPurpleLogoPath}
+    }
+    {
+        \begin{notebox}
+            \textbf{Notes}
+            \begin{itemize}
+                \item Use \texttt{\textbackslash includegraphics} for PNG/JPG assets.
+                \item Control placement with relative width (for example \texttt{0.8\textbackslash linewidth}).
+                \item Prefer high-resolution source images to avoid blur when projected.
+            \end{itemize}
+        \end{notebox}
+    }
+
+\begin{frame}{Vectorized Rendering (TikZ)}
+\centering
+\begin{tikzpicture}[>=latex, node distance=3cm]
+    \node[draw, rounded corners, fill=milaTealLight, minimum width=2.4cm, minimum height=1cm] (data) {Data};
+    \node[draw, rounded corners, fill=milaPurpleLight, right of=data, minimum width=2.8cm, minimum height=1cm] (model) {Model};
+    \node[draw, rounded corners, fill=milaGreenLight, right of=model, minimum width=2.6cm, minimum height=1cm] (output) {Predictions};
+    \node[draw, rounded corners, fill=milaYellowLight, below of=model, yshift=0.1cm, minimum width=3.6cm, minimum height=1cm] (eval) {Evaluation Metrics};
+
+    \draw[->, thick, milaPurple] (data) -- (model);
+    \draw[->, thick, milaPurple] (model) -- (output);
+    \draw[->, thick, milaPurple] (output) -- (eval);
+    \draw[->, thick, milaPurple] (eval) -- (model);
+\end{tikzpicture}
+
+\vspace{0.8em}
+\begin{notebox}
+Vector graphics (TikZ, pdf, eps, svg, etc.) stay sharp at any zoom level and adapt well to projector scaling.
+\end{notebox}
+\end{frame}
+
+\milasectionslide
+    {milaGreen}
+    {3.0}
+    {Current Slide Templates}
+    {Built-in macros from \texttt{slide\_templates.tex}}
+
+\begin{frame}{Template Catalog}
+\begin{notebox}
+\textbf{Currently available macros in the theme}
+\begin{itemize}
+    \item \texttt{\textbackslash milatitleslide\{title\}\{tag\}\{subtitle\}}
+    \item \texttt{\textbackslash milasectionslide\{color\}\{label\}\{title\}\{description\}}
+    \item \texttt{\textbackslash qasamplelike\{...\}} and \texttt{\textbackslash qasampledislike\{...\}} and \texttt{\textbackslash qasamplewrong\{...\}}
+    \item \texttt{\textbackslash milaendslide\{contact\}\{line\}}
+    \item \texttt{\textbackslash milatwocolumnslide\{title\}\{left column width\}\{right column width\}\{left column content\}\{right column content\}}
+\end{itemize}
+\end{notebox}
+
+\vspace{0.4em}
+\begin{notebox}
+This deck uses all of these templates to showcase the theme.
+\end{notebox}
+\end{frame}
+
+\qasamplelike
+    {Template Example: QA Slide}
+    {2026-03-24}
+    {Laptop Demo}
+    {Can this theme explain a technical result while staying visual?}
+    {Yes. Use equation slides for derivations, then pair with image/vector slides for intuition.}
+    {This format is useful when presenting model behavior to mixed audiences.}
+
+\qasampledislike
+    {Template Example: QA Slide (Dislike)}
+    {2026-03-24}
+    {Laptop Demo}
+    {Can this theme explain a technical result while staying visual?}
+    {Yes. Use equation slides for derivations, then pair with image/vector slides for intuition.}
+    {This format is useful when presenting model behavior to mixed audiences.}
+
+\qasamplewrong
+    {Template Example: QA Slide (Wrong)}
+    {2026-03-24}
+    {Laptop Demo}
+    {Can this theme explain a technical result while staying visual?}
+    {Yes. Use equation slides for derivations, then pair with image/vector slides for intuition.}
+    {This format is useful when presenting model behavior to mixed audiences.}
+
+\milasectionslide
+    {milaPurple}
+    {4.0}
+    {References}
+    {Minimal bibliography example using a .bib file}
+
+\begin{frame}{Selected Papers}
+\small
+The Transformer architecture and attention-only sequence modeling are introduced in \cite{vaswani2017attention}.
+
+Residual connections that enable very deep neural networks are presented in \cite{he2016resnet}.
+
+Pure Transformer models for large-scale image recognition are detailed in \cite{dosovitskiy2021vit}.
+\end{frame}
+
+\begin{frame}{References}
+    \printbibliography
+\end{frame}
+
+\milaendslide
+    {contact@mila.quebec}
+    {Thank you for your attention}
+
+\end{document}

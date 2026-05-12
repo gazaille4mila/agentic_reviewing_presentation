@@ -1,0 +1,185 @@
+%% =============================================================================
+%% SLIDE TEMPLATES
+%% =============================================================================
+
+% Title slide with full purple background
+\newcommand{\milatitleslide}[3]{%
+    \begin{frame}[plain]
+        \begin{tikzpicture}[remember picture,overlay]
+            \fill[milaPurple] (current page.north west) rectangle (current page.south east);
+            \node[anchor=north west, xshift=2mm, yshift=5mm] at (current page.north west) {%
+                \includegraphics[height=24mm]{\milaWhiteLogoPath}
+            };
+            \node[anchor=north east, xshift=-10mm, yshift=-9mm] at (current page.north east) {%
+                \textcolor{white}{\small\textbf{#2}}
+            };
+            \draw[white, line width=0.4pt] ([xshift=10mm, yshift=-15mm]current page.north west) --
+                                         ([xshift=-10mm, yshift=-15mm]current page.north east);
+        \end{tikzpicture}
+        \vspace*{30mm}
+        \begin{flushleft}
+            \textcolor{white}{\Huge #1}
+            \vspace{1.2em}
+
+            \textcolor{white}{\large #3}
+        \end{flushleft}
+    \end{frame}
+}
+
+% Section divider slide (full color background, purple title)
+\newcommand{\milasectionslide}[4]{%
+    \section{#3}%
+    \begin{frame}[plain]
+        % Pass base color name, not the light version
+        \colorlet{milasectionbg}{#1Light}
+        \begin{tikzpicture}[remember picture,overlay]
+            \fill[milasectionbg] (current page.north west) rectangle (current page.south east);
+        \end{tikzpicture}
+        \vspace{2cm}
+        \begin{flushleft}
+            \textcolor{milaPurple}{\small\textbf{#2}}\\[0.5em]
+            \textcolor{milaPurple}{\Huge\textbf{#3}}\\[1em]
+            \textcolor{milaPurple}{\normalsize #4}
+        \end{flushleft}
+    \end{frame}
+}
+
+% End slide
+\newcommand{\milaendslide}[2]{%
+    \begin{frame}[plain]
+        \begin{tikzpicture}[remember picture,overlay]
+            \fill[milaPurple] (current page.north west) rectangle (current page.south east);
+        \end{tikzpicture}
+        \vspace{2.5cm}
+        \begin{flushleft}
+            \textcolor{white}{\Huge\textbf{Questions?}}\\[2em]
+            \textcolor{milaPurpleLight}{\normalsize #1}\\[1em]
+            \textcolor{milaPurpleLight}{\small #2}
+        \end{flushleft}
+    \end{frame}
+}
+
+% QA sample slide (question + response + feedback)
+\newtcolorbox{userquestion}{
+    colback=milaPurple,
+    colframe=milaPurple,
+    coltext=white,
+    boxrule=0pt,
+    arc=3mm,
+    left=2mm,
+    right=2mm,
+    top=2mm,
+    bottom=2mm,
+    fontupper=\small,
+    width=0.9\textwidth
+}
+
+\newtcolorbox{botresponse}{
+    colback=milaBgLight,
+    colframe=milaPurpleLight,
+    coltext=milaDark,
+    boxrule=0.5pt,
+    arc=3mm,
+    left=2mm,
+    right=2mm,
+    top=2mm,
+    bottom=2mm,
+    fontupper=\small,
+    width=0.9\textwidth
+}
+
+\newtcolorbox{feedbackbox}[1]{
+    colback=white,
+    colframe=#1,
+    boxrule=1.5pt,
+    arc=2mm,
+    left=3mm,
+    right=3mm,
+    top=2mm,
+    bottom=2mm,
+    fontupper=\small
+}
+
+% User feedback (liked)
+\newcommand{\userfeedbacklike}[1]{%
+    \begin{feedbackbox}{milaGreen}
+        \textcolor{milaGreen}{\faThumbsUp[regular]}\ \ \textbf{Feedback:} #1
+    \end{feedbackbox}
+}
+
+% User feedback (disliked)
+\newcommand{\userfeedbackdislike}[1]{%
+    \begin{feedbackbox}{milaRed}
+        \textcolor{milaRed}{\faThumbsDown[regular]}\ \ \textbf{Feedback:} #1
+    \end{feedbackbox}
+}
+
+% User feedback (wrong)
+\newcommand{\userfeedbackwrong}[1]{%
+    \begin{feedbackbox}{milaRed}
+        \textcolor{milaRed}{\faTimesCircle}\ \ \textbf{Wrong:} #1
+    \end{feedbackbox}
+}
+
+\newcommand{\qasamplelike}[6]{%
+    \begin{frame}{#1}
+        \metadata{#2}{#3}
+        \vspace{0.3em}
+        \begin{userquestion}
+            \faUser\ \ #4
+        \end{userquestion}
+        \vspace{0.2em}
+        \begin{botresponse}
+            \faRobot\ \ #5
+        \end{botresponse}
+        \vspace{0.4em}
+        \userfeedbacklike{#6}
+    \end{frame}
+}
+
+\newcommand{\qasampledislike}[6]{%
+    \begin{frame}{#1}
+        \metadata{#2}{#3}
+        \vspace{0.3em}
+        \begin{userquestion}
+            \faUser\ \ #4
+        \end{userquestion}
+        \vspace{0.2em}
+        \begin{botresponse}
+            \faRobot\ \ #5
+        \end{botresponse}
+        \vspace{0.4em}
+        \userfeedbackdislike{#6}
+    \end{frame}
+}
+
+% QA sample slide with "wrong" feedback
+\newcommand{\qasamplewrong}[6]{%
+    \begin{frame}{#1}
+        \metadata{#2}{#3}
+        \vspace{0.3em}
+        \begin{userquestion}
+            \faUser\ \ #4
+        \end{userquestion}
+        \vspace{0.2em}
+        \begin{botresponse}
+            \faRobot\ \ #5
+        \end{botresponse}
+        \vspace{0.4em}
+        \userfeedbackwrong{#6}
+    \end{frame}
+}
+
+% Generic two-column content slide.
+\newcommand{\milatwocolumnslide}[5]{%
+    \begin{frame}{#1}
+        \begin{columns}[T,totalwidth=\textwidth]
+            \begin{column}{#2\textwidth}
+                #4
+            \end{column}
+            \begin{column}{#3\textwidth}
+                #5
+            \end{column}
+        \end{columns}
+    \end{frame}
+}
