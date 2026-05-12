@@ -1,0 +1,97 @@
+\begin{thebibliography}{17}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Adam(2025)]{adam2025peer}
+David Adam.
+\newblock The peer-review crisis: how to fix an overloaded system.
+\newblock \emph{Nature}, 644\penalty0 (8075):\penalty0 24--27, 2025.
+
+\bibitem[Agarwal et~al.(2025)Agarwal, Sahu, Puri, Laradji, Dvijotham, Stanley, Charlin, and Pal]{agarwal2025litllms}
+Shubham Agarwal, Gaurav Sahu, Abhay Puri, Issam~H. Laradji, Krishnamurthy~Dj Dvijotham, Jason Stanley, Laurent Charlin, and Christopher Pal.
+\newblock Lit{LLM}s, {LLM}s for literature review: Are we there yet?
+\newblock \emph{Transactions on Machine Learning Research}, 2025.
+\newblock ISSN 2835-8856.
+\newblock URL \url{https://openreview.net/forum?id=heeJqQXKg7}.
+
+\bibitem[Anthis et~al.(2025)Anthis, Liu, Richardson, Kozlowski, Koch, Evans, Brynjolfsson, and Bernstein]{anthis2025llm}
+Jacy~Reese Anthis, Ryan Liu, Sean~M Richardson, Austin~C Kozlowski, Bernard Koch, James Evans, Erik Brynjolfsson, and Michael Bernstein.
+\newblock Llm social simulations are a promising research method.
+\newblock \emph{arXiv preprint arXiv:2504.02234}, 2025.
+
+\bibitem[Checco et~al.(2021)Checco, Bracciale, Loreti, Pinfield, and Bianchi]{checco2021ai}
+Alessandro Checco, Lorenzo Bracciale, Pierpaolo Loreti, Stephen Pinfield, and Giuseppe Bianchi.
+\newblock Ai-assisted peer review.
+\newblock \emph{Humanities and social sciences communications}, 8\penalty0 (1):\penalty0 1--11, 2021.
+
+\bibitem[Cortes \& Lawrence(2021)Cortes and Lawrence]{cortes2021inconsistency}
+Corinna Cortes and Neil~D Lawrence.
+\newblock Inconsistency in conference peer review: Revisiting the 2014 neurips experiment.
+\newblock \emph{arXiv preprint arXiv:2109.09774}, 2021.
+
+\bibitem[Hossain et~al.(2024)Hossain, Sinha, Bansal, Knipper, Sarkar, Salvador, Mahajan, Guttikonda, Akter, Hassan, et~al.]{hossain2024llms}
+Eftekhar Hossain, Sanjeev~Kumar Sinha, Naman Bansal, Alex Knipper, Souvika Sarkar, John Salvador, Yash Mahajan, Sri Guttikonda, Mousumi Akter, Md~Mahadi Hassan, et~al.
+\newblock Llms as meta-reviewers' assistants: A case study.
+\newblock \emph{arXiv preprint arXiv:2402.15589}, 2024.
+
+\bibitem[Idahl \& Ahmadi(2024)Idahl and Ahmadi]{idahl2024openreviewer}
+Maximilian Idahl and Zahra Ahmadi.
+\newblock Openreviewer: A specialized large language model for generating critical scientific paper reviews.
+\newblock \emph{arXiv preprint arXiv:2412.11948}, 2024.
+
+\bibitem[Laban et~al.(2025)Laban, Hayashi, Zhou, and Neville]{laban2025llms}
+Philippe Laban, Hiroaki Hayashi, Yingbo Zhou, and Jennifer Neville.
+\newblock Llms get lost in multi-turn conversation.
+\newblock \emph{arXiv preprint arXiv:2505.06120}, 2025.
+
+\bibitem[Latona et~al.(2024)Latona, Ribeiro, Davidson, Veselovsky, and West]{latona2024ai}
+Giuseppe~Russo Latona, Manoel~Horta Ribeiro, Tim~R Davidson, Veniamin Veselovsky, and Robert West.
+\newblock The ai review lottery: Widespread ai-assisted peer reviews boost paper scores and acceptance rates.
+\newblock \emph{arXiv preprint arXiv:2405.02150}, 2024.
+
+\bibitem[Liang et~al.(2024{\natexlab{a}})Liang, Izzo, Zhang, Lepp, Cao, Zhao, Chen, Ye, Liu, Huang, et~al.]{liang2024monitoring}
+Weixin Liang, Zachary Izzo, Yaohui Zhang, Haley Lepp, Hancheng Cao, Xuandong Zhao, Lingjiao Chen, Haotian Ye, Sheng Liu, Zhi Huang, et~al.
+\newblock Monitoring ai-modified content at scale: A case study on the impact of chatgpt on ai conference peer reviews.
+\newblock \emph{arXiv preprint arXiv:2403.07183}, 2024{\natexlab{a}}.
+
+\bibitem[Liang et~al.(2024{\natexlab{b}})Liang, Zhang, Cao, Wang, Ding, Yang, Vodrahalli, He, Smith, Yin, McFarland, and Zou]{doi:10.1056/AIoa2400196}
+Weixin Liang, Yuhui Zhang, Hancheng Cao, Binglu Wang, Daisy~Yi Ding, Xinyu Yang, Kailas Vodrahalli, Siyu He, Daniel~Scott Smith, Yian Yin, Daniel~A. McFarland, and James Zou.
+\newblock Can large language models provide useful feedback on research papers? a large-scale empirical analysis.
+\newblock \emph{NEJM AI}, 1\penalty0 (8):\penalty0 AIoa2400196, 2024{\natexlab{b}}.
+\newblock \doi{10.1056/AIoa2400196}.
+\newblock URL \url{https://ai.nejm.org/doi/full/10.1056/AIoa2400196}.
+
+\bibitem[Liang et~al.(2024{\natexlab{c}})Liang, Zhang, Cao, Wang, Ding, Yang, Vodrahalli, He, Smith, Yin, et~al.]{liang2024can}
+Weixin Liang, Yuhui Zhang, Hancheng Cao, Binglu Wang, Daisy~Yi Ding, Xinyu Yang, Kailas Vodrahalli, Siyu He, Daniel~Scott Smith, Yian Yin, et~al.
+\newblock Can large language models provide useful feedback on research papers? a large-scale empirical analysis.
+\newblock \emph{NEJM AI}, 1\penalty0 (8):\penalty0 AIoa2400196, 2024{\natexlab{c}}.
+
+\bibitem[Liu \& Shah(2023)Liu and Shah]{liu2023reviewergpt}
+Ryan Liu and Nihar~B Shah.
+\newblock Reviewergpt? an exploratory study on using large language models for paper reviewing.
+\newblock \emph{arXiv preprint arXiv:2306.00622}, 2023.
+
+\bibitem[Naddaf(2025)]{naddaf2025ai}
+Miryam Naddaf.
+\newblock Ai is transforming peer review—and many scientists are worried.
+\newblock \emph{Nature}, 639\penalty0 (8056):\penalty0 852--854, 2025.
+
+\bibitem[Petrescu \& Krishen(2022)Petrescu and Krishen]{petrescu2022evolving}
+Maria Petrescu and Anjala~S Krishen.
+\newblock The evolving crisis of the peer-review process.
+\newblock \emph{Journal of Marketing Analytics}, 10\penalty0 (3):\penalty0 185--186, 2022.
+
+\bibitem[Sahakyan \& AlShebli(2025)Sahakyan and AlShebli]{sahakyan2025disparities}
+Maria Sahakyan and Bedoor AlShebli.
+\newblock Disparities in peer review tone and the role of reviewer anonymity.
+\newblock \emph{arXiv preprint arXiv:2507.14741}, 2025.
+
+\bibitem[Tyser et~al.(2024)Tyser, Segev, Longhitano, Zhang, Meeks, Lee, Garg, Belsten, Shporer, Udell, et~al.]{tyser2024ai}
+Keith Tyser, Ben Segev, Gaston Longhitano, Xin-Yu Zhang, Zachary Meeks, Jason Lee, Uday Garg, Nicholas Belsten, Avi Shporer, Madeleine Udell, et~al.
+\newblock Ai-driven review systems: evaluating llms in scalable and bias-aware academic reviews.
+\newblock \emph{arXiv preprint arXiv:2408.10365}, 2024.
+
+\end{thebibliography}

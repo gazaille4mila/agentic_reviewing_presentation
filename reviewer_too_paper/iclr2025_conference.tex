@@ -1,0 +1,1202 @@
+
+\documentclass{article} % For LaTeX2e
+\usepackage{iclr2025_conference,times}
+
+% Optional math commands from https://github.com/goodfeli/dlbook_notation.
+\input{math_commands.tex}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{colortbl}
+\usepackage[table]{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+% Tighter list style
+\setlist[itemize]{noitemsep, topsep=0pt, leftmargin=*}
+
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{adjustbox}
+\usepackage[most]{tcolorbox}
+\usepackage{amssymb}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{geometry}
+\usepackage{pifont}
+\usepackage{wrapfig}
+\tcbuselibrary{skins}
+
+\definecolor{LightSkyBlue}{RGB}{135,206,250}
+\definecolor{LightRed}{RGB}{255, 230, 230} 
+\definecolor{LightRoyalBlue}{RGB}{236, 240, 252}
+\definecolor{LightGreen}{RGB}{230, 242, 230} 
+\definecolor{LightOrange}{RGB}{255, 246, 230} 
+\definecolor{LightPurple}{RGB}{242, 230, 242} 
+\definecolor{LightBrown}{RGB}{246, 234, 234}
+\definecolor{LighterSkyBlue}{RGB}{243, 250, 255}
+\definecolor{LightLimeGreen}{RGB}{235, 250, 235}
+\definecolor{LightPeach}{RGB}{255, 251, 248}
+\definecolor{LightPink}{RGB}{255, 249, 250} 
+\definecolor{LightThistle}{RGB}{251, 249, 251}
+
+\newtcolorbox{reviewbox}[3]{
+    enhanced,
+    breakable,
+    colback=#2!10!white,
+    colframe=#2!80!black,
+    fonttitle=\bfseries,
+    coltitle=black,
+    title={#1: #3},
+    coltitle=black,      
+    attach boxed title to top left={yshift=-0.25cm, xshift=0.5cm},
+    boxed title style={
+        colback=white,
+        colframe=#2!80!black,
+    }
+}
+
+
+\newcommand{\cmark}{\checkmark}
+\newcommand{\shrink}[1][0.5]{\vspace{-#1\baselineskip}}
+
+
+\title{\begin{center}
+    ReviewerToo: Should AI Join The Program Committee? A Look At The Future of Peer Review
+\end{center}}
+
+% Authors must not appear in the submitted version. They should be hidden
+% as long as the \iclrfinalcopy macro remains commented out below.
+% Non-anonymous submissions will be rejected without review.
+
+\author{
+\parbox{\linewidth}{\centering
+Gaurav Sahu$^{1,2,3}$ \quad Hugo Larochelle$^{1}$ \quad Laurent Charlin$^{1,2,5}$ \quad Christopher Pal$^{1,3,4,5,6}$} \\
+\parbox{\linewidth}{\centering
+$^{1}$Mila -- Quebec AI Institute, $^{2}$HEC Montréal, $^{3}$ServiceNow Research \\
+$^{4}$Université de Montréal, $^{5}$Canada CIFAR Chair, $^{6}$Polytechnique Montréal \\}
+}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to \LaTeX{} to determine where to break
+% the lines. Using \AND forces a linebreak at that point. So, if \LaTeX{}
+% puts 3 of 4 authors names on the first line, and the last on the second
+% line, try using \AND instead of \And before the third author name.
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+\iclrfinalcopy % Uncomment for camera-ready version, but NOT for submission.
+\begin{document}
+
+
+\maketitle
+
+\begin{abstract}
+Peer review is the cornerstone of scientific publishing, yet it suffers from inconsistencies, reviewer subjectivity, and scalability challenges. 
+We introduce \textbf{ReviewerToo}, a modular framework for studying and deploying AI-assisted peer review to complement human judgment with systematic and consistent assessments. ReviewerToo supports systematic experiments with specialized reviewer personas and structured evaluation criteria, and can be partially or fully integrated into real conference workflows. We validate ReviewerToo on a carefully curated dataset of 1,963 paper submissions from ICLR 2025, where our experiments with the \texttt{gpt-oss-120b} model achieves 81.8\% accuracy for the task of categorizing a paper as accept/reject compared to 83.9\% for the average human reviewer. Additionally, ReviewerToo-generated reviews are rated as higher quality than the human average by an LLM judge, though still trailing the strongest expert contributions. Our analysis highlights domains where AI reviewers excel (e.g., fact-checking, literature coverage) and where they struggle (e.g., assessing methodological novelty and theoretical contributions), underscoring the continued need for human expertise. Based on these findings, we propose guidelines for integrating AI into peer-review pipelines, showing how AI can enhance consistency, coverage, and fairness while leaving complex evaluative judgments to domain experts. Our work provides a foundation for systematic, hybrid peer-review systems that scale with the growth of scientific publishing.
+\end{abstract}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{figures/accuracies_plot.pdf}
+    \caption{Performance of Different Reviewers on the ICLR-2k dataset.}
+    \label{fig:f1_plot}
+\end{figure}
+
+\section{Introduction}
+Major machine learning conferences such as ICLR and AAAI now receive (tens of) thousands of submissions every year, creating enormous pressure on the peer-review process. To cope with this scale, several venues begin experimenting with large language models (LLMs) as review assistants.\footnote{E.g.\ AAAI 2026 (https://aaai.org/conference/aaai/aaai-26/instructions-for-aaai-26-reviewers/)} These early deployments demonstrate both promise~\citep{liu2023reviewergpt,petrescu2022evolving,checco2021ai} and risk~\citep{liang2024can,latona2024ai}: LLMs can generate consistent and scalable reviews, but they also produce superficial or misleading assessments that may erode confidence in the process.\footnote{https://www.nature.com/articles/d41586-025-00894-7} Despite their visibility, such deployments remain one-off interventions constrained by conference timelines and are difficult to study in a reproducible manner.
+
+A central challenge is that most reported outcomes of AI-assisted peer review remain anecdotal (even if large-scale), offering little scientific basis for best practices. Without systematic and reproducible evaluations, the community cannot determine where AI helps, where it harms, or how it might be responsibly integrated into review pipelines. Progress requires platforms that support controlled, transparent, and repeatable experiments---much like benchmarks have done for other areas of machine learning.
+
+In this work, we introduce \textbf{ReviewerToo}, a modular framework for studying and deploying AI-assisted peer review that can complement human judgment with systematic and consistent assessments. ReviewerToo enables researchers to design, test, and compare AI reviewers under standardized conditions, and it is partially or fully adopted in real conference workflows. We take inspiration from recent work on LLM-based social simulations~\citep{anthis2025llm}, which propose using language models as proxies for human subjects in the study of collective behavior. In this spirit, ReviewerToo treats peer review as a socio-technical process shaped by diverse reviewer roles, biases, and interactions. By instantiating reviewer personas--such as \emph{empiricists}, \emph{theorists}, and \emph{pedagogical} reviewers--we use LLMs to simulate distinct reviewing philosophies and study how they align with human decisions.
+
+We validate ReviewerToo on a curated dataset of ICLR 2025 submissions obtained from the OpenReview platform. This dataset consists of 1,963 papers sampled to balance acceptance and rejection decisions while preserving diversity across score ranges and decision categories. We refer to this dataset as the \textbf{ICLR-2k} dataset. This scope enables controlled yet realistic evaluation of AI-assisted reviewing at scale, yielding both methodological and empirical insights. Our analysis shows that ReviewerToo produces reasonable reviews, surfaces systematic biases across personas, and highlights dimensions where AI reviewers are particularly strong (e.g., fact-checking, literature coverage) or weak (e.g., assessing methodological novelty and theoretical contributions). These findings provide an evidence-based perspective on the opportunities and limitations of AI in peer review, moving beyond anecdote toward systematic study.
+In sum, this paper makes three contributions:
+\begin{enumerate}
+    \item We conceptualize peer review as a socio-technical process and propose \textbf{ReviewerToo}, a modular framework for evaluating AI-assisted reviewing under controlled and transparent conditions.
+    \item We present a large-scale empirical study on the \textbf{ICLR-2k} dataset, analyzing the performance and biases of different reviewer personas and their alignment with meta-review outcomes.
+    \item We derive a set of guidelines for integrating AI into peer-review pipelines, informed by both quantitative performance metrics and qualitative analyses of reviewer behavior.
+\end{enumerate}
+
+Together, these contributions provide a foundation for systematic and consistent integration of AI into the peer-review process.
+
+\section{Background}
+\paragraph{Challenges in Traditional Peer Review} \shrink[0.75]
+Peer review has long faced well-documented challenges, including reviewer fatigue, bias, and low inter-reviewer agreement~\citep{cortes2021inconsistency,adam2025peer}. Large-scale experiments at venues such as NeurIPS revealed that acceptance decisions can vary almost randomly~\citep{cortes2021inconsistency} and exhibit low inter-rater reliability.
+% Biases related to author identity and affiliation have also been observed, affecting the tone and focus of reviews~\citep{sahakyan2025disparities}.
+Combined with the rapid growth of submissions at top conferences (e.g., 11k+ and 25k+ at ICLR 2025 and NeurIPS 2025, respectively) and widespread reports of ``reviewer fatigue,'' scalability has become a pressing concern~\citep{adam2025peer}.
+
+\paragraph{AI and LLMs as Peer-Review Assistants} \shrink[0.75]
+Recent advances in natural language processing (NLP) and large language models (LLMs) have spurred interest in using AI to assist peer review~\citep{liang2024can,tyser2024ai}. Publishers and researchers have piloted systems for automated review generation, citation verification, fact-checking, and meta-review synthesis~\citep{hossain2024llms}. Surveys suggest that a substantial minority of reviewers are already using AI tools to speed up report writing, with some conferences estimating that 15--20\% of reviews contain AI-assisted content~\citep{latona2024ai,naddaf2025ai}. Empirical studies show mixed results: while LLM-generated reviews can be helpful according to authors, they also risk hallucinations and lack more in-depth judgment~\citep{doi:10.1056/AIoa2400196}. Ongoing work thus emphasizes ``AI-in-the-loop'' designs, where models act as assistants for specific subtasks rather than as replacements for expert judgment~\citep{idahl2024openreviewer,liang2024monitoring}.
+
+Despite this growing body of research, relatively little attention has been paid to \emph{modeling reviewer diversity itself}. In practice, reviewers embody distinct philosophies---some emphasizing theoretical rigor, others empirical robustness, clarity of exposition, or long-term vision. Prior work on LLM-based social simulation shows that instantiating multiple role-specific agents can capture diverse perspectives in human decision processes~\citep{sahakyan2025disparities,anthis2025llm}. Inspired by this, we introduce \textsc{ReviewerToo}, a modular framework that explicitly models a plurality of reviewer personas. By simulating heterogeneous reviewer roles (e.g., ``theorist,'' ``empiricist,'' or ``pedagogical''), our framework enables analysis not only of predictive accuracy against ground truth but also of the structure of inter-reviewer disagreement. This pluralistic design contributes both to practical peer-review augmentation and to the scientific understanding of reviewer dynamics.
+
+
+\section{System Overview}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/reviewer_too.pdf}
+    \caption{\textbf{The ReviewerToo Framework.} A paper passes through literature, reviewer, author, and meta-reviewer agents. The module design allows both humans and LLMs to participate at each stage, with optional feedback loops for iterative improvement.}
+\label{fig:pipeline_overview}
+\end{figure}
+\textsc{ReviewerToo} is a modular framework for studying and deploying AI-assisted peer review.
+It proceeds in a structured sequence: ingestion of the submitted manuscript, construction of a targeted literature review, generation of reviews by a diverse panel of reviewer agents, drafting of a consolidated rebuttal by an author agent, and finally a metareview that integrates the full record.
+The full workflow is shown in Figure~\ref{fig:pipeline_overview}.
+
+We adopt a single-turn interaction protocol, in which each agent contributes once per stage (with the option for reviewers to issue one short post-rebuttal response). 
+This choice reflects the conventions of many academic conferences, where reviewers typically provide a single review, authors submit one rebuttal, and only limited clarifications follow. 
+While multi-turn deliberation could in principle be supported, our design prioritizes realism, and tractability, as LLMs have been shown to lose context in long, multi-turn discussions~\citep{laban2025llms}. We now discuss the different agents in our framework.
+
+\label{sub:agents}
+\paragraph{The Literature Review Agent.}
+For literature review, we use LitLLM~\citep{agarwal2025litllms}, a retrieval-and-summarization agent proposed for automated literature review. Given a manuscript, LitLLM generates search queries and submits them to Semantic Scholar. Retrieved papers are ranked using a debate-based method introduced in the original work, after which the top-$k$ candidates are selected. The agent summarizes these papers into a concise literature review that grounds subsequent reviewer, author, and metareviewer agents.
+
+\paragraph{Reviewer Agents.}\shrink[.75]
+Each reviewer agent receives the manuscript (converted to Markdown), an optional literature summary, and prompts encoding a specific reviewing persona or evaluation criteria. Reviewers generate structured assessments along axes commonly used in conference rubrics: a paper summary, explicit strengths and weaknesses, novelty, soundness, experimental validity, results/discussion quality, organization/presentation, and impact. For each dimension, reviewers must ground their judgments in either (i) explicit spans of the manuscript, or (ii) retrieved evidence from the literature summary. Additionally, the reviewer agent is also grounded in the official ICLR reviewer guidelines.\footnote{https://iclr.cc/Conferences/2025/ReviewerGuide} If no grounding can be located, the agent is rerun with stricter retrieval until a verifiable justification is produced. At the end of their report, reviewers provide a categorical recommendation from \{Accept (Oral), Accept (Spotlight), Accept (Poster), Reject, Desk Reject\}.
+
+To surface complementary strengths and disagreements, we instantiate a diverse panel of personas. For brevity, we only mention a subset here, and we refer the reader to Table~\ref{tab:reviewer_personas} for a more details:  
+\begin{itemize}
+    \item \textbf{Stance-based personas:} \textit{critical} (reject-biased), \textit{permissive} (accept-biased), and \textit{default} (neutral).  
+    \item \textbf{Epistemic personas:} e.g., \textit{theorist} (formal emphasis), \textit{empiricist} (experimental rigor), \textit{pedagogical} (clarity and exposition), and \textit{pragmatist} (practical impact).  
+    \item \textbf{Stylized personas:} caricatured reviewer archetypes such as \textit{visionary} (long-term potential), \textit{probabilistic} (uncertainty reasoning), and \textit{impact-driven} (field-level relevance).  
+\end{itemize}
+
+\paragraph{Author Agent.}\shrink[.75]
+The author agent takes the manuscript, the full set of reviewer reports, and the literature summary as input. It generates a consolidated rebuttal that addresses the most severe criticisms, clarifies potential misunderstandings, and, when appropriate, proposes concrete revisions such as releasing code or adding ablation studies. The rebuttal must explicitly cite either reviewer claims or relevant literature, ensuring that clarifications are verifiable rather than speculative. Rebuttals are stored per review configuration to facilitate analysis.
+
+\paragraph{Metareviewer Agent.}\shrink[.75]
+The metareviewer integrates all reviewer reports, the author rebuttal, and any optional post-rebuttal reviewer responses. Its role is to synthesize consensus while controlling for reviewer disagreement and bias. Concretely, it:  
+(1) summarizes reviewer stances and scores pre-rebuttal,  
+(2) identifies common strengths and weaknesses,  
+(3) evaluates rebuttal effectiveness,  
+(4) tracks stance shifts post-rebuttal, and  
+(5) highlights lingering concerns or unresolved disagreements.  
+
+To avoid being swayed by overly negative or idiosyncratic reviewers, the metareviewer includes a fact-checking module. This module verifies reviewer-stated claims against both the manuscript and the literature summary, discarding unsupported statements. Each fact is also assigned a significance score, indicating its weight in shaping the final decision. The final metareview thus reflects a combination of consensus synthesis, rebuttal analysis, and fact-weighted evidence assessment.
+Notably, the metareviewer agent is also grounded in the official Area Chair guidelines from the ICLR.\footnote{https://iclr.cc/Conferences/2025/ACGuide}
+We include the implementation details of the system in Appendix~\ref{app:implementation} and include our prompts in the supplementary material.
+
+
+\begin{table}[t]
+\centering\
+\scriptsize
+\caption{Main Results on ICLR-2k Dataset. Best results (per block, per column) are in bold.}
+\label{tab:main_results}
+\resizebox{0.9\textwidth}{!}{%
+\begin{tabular}{lccccccccc}
+\toprule
+\textbf{Agent} & \multicolumn{4}{c}{\textbf{5-way}} & \multicolumn{4}{c}{\textbf{2-way}} & \textbf{ELO}$^\uparrow$ \\
+\cmidrule(lr){2-5} \cmidrule(lr){6-9}
+ & P$^\uparrow$ & R$^\uparrow$ & F$^\uparrow$ & A$^\uparrow$ & P$^\uparrow$ & R$^\uparrow$ & F$^\uparrow$ & A$^\uparrow$ &  \\
+\midrule
+\multicolumn{10}{c}{\textbf{ReviewerToo Agents}} \\
+\midrule
+Theorist & 31.0 & 24.0 & \textbf{22.6} & 45.9 & 72.1 & \textbf{72.1} & \textbf{71.9} & \textbf{71.9} & 1463 \\
+Pedagogical  & 27.1 & 23.0 & 21.0 & \textbf{51.7} & 72.9 & 68.9 & 68.3 & 70.3 & 1256 \\
+Empiricist & {\textbf{32.5}} & 22.5 & 20.6 & 50.7 & 69.7 & 66.1 & 65.3 & 67.6 & \textbf{1558} \\
+\midrule
+Critical & 12.5 & 17.0 & 11.9 & 49.6 & \textbf{76.8} & 50.1 & 35.0 & 53.6 & 423 \\
+Permissive  & 10.5 & 16.8 & 7.5 & 19.1 & 73.3 & 50.3 & 32.4 & 46.8 & 880 \\
+Default & 26.7 & \textbf{24.5} & 21.8 & 43.3 & 72.4 & 71.5 & 70.5 & 70.6 & 1136 \\
+\midrule
+Meta w/ Top-3 & 28.6 & 32.1 & 27.1 & 49.5 & 74.2 & 76.3 & 73.4 & 74.8 & 1329 \\
+Meta w/ Top-3+Base & 26.7 & 26.1 & 19.5 & 30.4 & 74.7 & 63.6 & 57.3 & 61.2 & 1154 \\
+\rowcolor{blue!8} Meta (all) & \textbf{32.1} & \textbf{32.4} & \textbf{28.1} & \textbf{52.5} & \textbf{79.3} & \textbf{80.1} & \textbf{79.3} & \textbf{81.8} & \textbf{1657} \\
+\midrule
+Majority (Top-3) & 30.5 & 28.5 & 25.9 & 52.0 & 73.1 & 70.0 & 69.8 & 71.2 & -- \\
+Majority (all) & 30.7 & 30.0 & 27.9 & 49.2 & 75.1 & 75.2 & 75.1 & 75.1 & -- \\
+Average (all) & 32.5 & 26.4 & 22.7 & 42.2 & 68.6 & 65.0 & 60.3 & 64.8 & -- \\
+\midrule
+\multicolumn{10}{c}{\textbf{Supervised Baselines}} \\
+\midrule
+XGBoost (Bert) & 12.9 & 20.0 & 14.4 & 20.0 & 59.0 & 55.8 & 44.3 & 55.8 & -- \\
+XGBoost (tfidf) & 17.4 & 21.4 & 17.4 & 21.4 & 70.4 & 63.7 & 58.2 & 63.7 & -- \\
+ Bert FT & 25.7 & 26.4 & 22.5 & 22.4 & 84.2 & 29.1 & 43.24 & 65.43 & -- \\
+\midrule
+Human (avg) & 15.2 & 12.4 & 13.7 & 37.6 & {85.2} & {84.1} & {83.8} & {83.9} & 540 \\
+\rowcolor{blue!8}Human (top-1\%) & 31.5 & 30.4 & 29.7 & 56.4 & {93.7} & {91.9} & {90.4} & {92.4} & {1316} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+
+\section{Experimental Setup}
+\subsection{Datasets}
+
+All experiments are conducted on a dataset derived from ICLR 2025 submissions to the OpenReview platform. From the full pool of 11,672 submissions, we curate a stratified subset of 1,963 papers, which we refer to as the \textbf{ICLR-2k} dataset. We focus on this subset for all reported results, as it enables balanced coverage of decision categories and controlled ablation studies.
+Each submission is annotated with the official conference decision, which serves as the ground truth for both five-way and binary evaluations. We consider five categories:  
+\textit{Accept (Oral)}, \textit{Accept (Spotlight)}, \textit{Accept (Poster)}, \textit{Reject}, and \textit{Desk Reject}.  
+Withdrawn papers are merged into the \textit{Reject} category, while \textit{Desk Reject} is preserved separately to test the system’s ability to detect incomplete or rule-violating submissions.
+To ensure representativeness, we first rank all $\sim$12k submissions (213 orals, 380 spotlights, 3115 posters, 7894 rejected, 70 desk rejected) by average reviewer score and then sample proportionally across the score distribution. Specifically:  
+(i) For \textit{Accepted (Poster)}, we select 300 of 3,115 submissions, sampling evenly from the top, middle, and bottom thirds of the ranked list;  
+(ii) For \textit{Reject}, we include 500 of 5,019 submissions using the same stratification, and add 500 randomly sampled withdrawn papers;  
+(iii) For \textit{Accepted (Oral)}, \textit{Accepted (Spotlight)}, and \textit{Desk Reject}, we include all available cases.  
+This design balances acceptance and rejection while preserving diversity across decision types and score ranges.  
+% Table~\ref{tab:iclr-dataset-stats} summarizes the resulting class distribution.
+
+% \begin{wraptable}[18]{r}{0.4\linewidth}
+% \vspace{-2em}
+% \centering
+% \scriptsize
+% \caption{Ablation Results for conference instructions (CI), LitLLM, and rebuttal (RB).}
+% \label{tab:ablation}
+% \setlength{\tabcolsep}{6pt}
+% \renewcommand{\arraystretch}{1.0}
+% \begin{tabular}{@{}l rrrr@{}}
+% \toprule
+% \textbf{Agent (Configuration)} & \textbf{F1 Score}$^{\uparrow}$ & \textbf{ELO}$^{\uparrow}$ \\
+% \midrule
+% Theorist ($\phi$) & 67.4 & 1371 \\
+% \quad +CI & 69.9 & 1422 \\
+% \quad +CI+LitLLM & \cellcolor{gray!20}71.9 & \cellcolor{gray!20}1463 \\
+% \quad +CI+RB & 63.8 & 1299 \\
+% \quad +CI+LitLLM+RB & 63.6 & 1195 \\
+% \midrule
+% Pedagogical ($\phi$) & \cellcolor{gray!20}75.5 & \cellcolor{gray!20}1345 \\
+% \quad +CI & 70.5 & 1256 \\
+% \quad +CI+LitLLM & 68.2 & 1216 \\
+% \quad +CI+RB & 61.9 & 1103 \\
+% \quad +CI+LitLLM+RB & 63.0 & 1122 \\
+% \midrule
+% Empiricist ($\phi$) & 69.1 & 1502 \\
+% \quad +CI & 64.8 & 1427 \\
+% \quad +CI+LitLLM & \cellcolor{gray!20}70.7 & \cellcolor{gray!20}1558 \\
+% \quad +CI+RB & 59.7 & 1316 \\
+% \quad +CI+LitLLM+RB & 60.4 & 1332 \\
+% \bottomrule
+% \end{tabular}
+% \end{wraptable}
+
+\subsection{Baselines}
+\label{sec:baselines}
+We evaluate \textsc{ReviewerToo} on multiple baselines ranging from trivial heuristics to human-derived signals. Our baselines fall into four groups:
+\textbf{(1) Supervised Baselines.}  
+We include three supervised baselines where we train an XGBoost classifier with TF-IDF features (\textbf{XGBoost (tfidf)}), and XGBoost classifier with frozen BERT embeddings as features (\textbf{XGBoost (bert)}), and BERT classifier finetuned on the dataset (\textbf{Bert FT}).
+\textbf{(2) Single-agent reviewers.}  
+To isolate the contribution of structured protocols, we ablate on the different conditioning variables:
+\textbf{(a) $\phi$:} represents a reviewer agent without any conditioning on conference instructions, or literature review, or rebuttal. It only takes as input the manuscript and responds according to its base personality imbued in the system prompt.
+\textbf{(b) CI:} adds ICLR reviewers guidelines for the reviewer agents and area chair guidelines for metareviewer agent in addition to the persona-specific instructions. 
+\textbf{(c) RB:} extends conference conditioning with an author rebuttal and one round of reviewer response.
+\textbf{(d) LitLLM:} further incorporates external retrieval and summarization (LitLLM).
+This sequence reflects a controlled ablation from bare-bones to fully contextualized reviewing.
+\textbf{(3) Reviewer ensembles.}  
+We test whether diversity and aggregation improve fidelity.
+\textbf{(a) Majority vote:} across all reviewer personas.  
+\textbf{(b) Extremal ensembles:} combining permissive and critical personas to probe systematic bias.  
+\textbf{(c) Metareviewer aggregation:} synthesizing all reviews and rebuttals into a calibrated consensus.
+
+Together, these baselines span uninformed heuristics, isolated reviewer agents, structured multi-agent protocols, ensembles, and human artifacts. This progression allows us to evaluate two complementary questions:  
+\textbf{(1)} how effective LLMs are as reviewers in absolute terms, and  
+\textbf{(2)} which design choices most narrow the gap to human decision-making.
+
+\subsection{Evaluation Metrics} \shrink[.75] 
+We assess \textsc{ReviewerToo} along multiple axes that capture predictive accuracy, reviewer agreement, review quality, and rebuttal helpfulness.
+We evaluate alignment with real conference decisions by measuring both the 5-way classification performance (Oral, Spotlight, Poster, Reject, Desk Reject) and the binary Accept/Reject task; we report macro-averaged
+\textbf{Precision}, \textbf{Recall}, and \textbf{F1},
+with macro averaging across classes $c$. 
+We also report overall \textbf{Accuracy}, and \textbf{False Positive Rate} (for binary task).
+We quantify consistency among reviewers and with the metareviewer. 
+For two reviewers $i,j$, we compute \textbf{Cohen’s} $\kappa$
+
+\paragraph{Review quality.} \shrink[.75] 
+We assess the quality of review text through LLM-based judgments. 
+We conduct large-scale pairwise comparisons where a held-out LLM acts as the judge. For each paper, two reviews are shown side by side and evaluated along five axes:
+(1) \emph{Depth} of engagement with the paper’s methodology and arguments; (2) \emph{Actionability}, i.e., whether weaknesses are paired with concrete suggestions and is the feedback constructive; (3) \emph{Summary}, i.e. whether the agent identified strengths and weakness of the paper in a balanced manner; (4) \emph{Clarity}, reflecting readability, structure and professionalism; and (5) \emph{Helpfulness} of the review to the author. The judge assigns a win, loss, or draw outcome to each review. 
+From the full set of pairwise outcomes we compute an \textbf{ELO rating} per system using the standard logistic update.
+We include the complete protocol in Appendix~\ref{app:elo-judging}.
+% \paragraph{Effectiveness of rebuttals.}\shrink[0.75]
+% To assess rebuttal effectiveness, we measure how often post-rebuttal decisions differ from pre-rebuttal ones. 
+% For each persona, we compute the change in accuracy:
+% $
+% \Delta \text{Acc} = \text{F1}_{\text{post}} - \text{F1}_{\text{pre}},
+% $
+% as well as the fraction of predictions that flip.
+
+\section{Results}
+
+
+\begin{wraptable}[14]{r}{0.5\linewidth}
+\vspace{-5em}
+\centering
+\scriptsize
+\caption{Ablation Results for conference instructions (CI), LitLLM, and rebuttal (RB).}
+\label{tab:ablation}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.0}
+\begin{tabular}{@{}l rrrr@{}}
+\toprule
+\textbf{Agent (Configuration)} & \textbf{F1}$^{\uparrow}$ & \textbf{ELO}$^{\uparrow}$ & \textbf{FPR}$^{\downarrow}$ & \textbf{FNR}$^{\downarrow}$ \\
+\midrule
+Theorist ($\phi$) & 67.4 & 1371 & 96.1 & 42.0 \\
+\quad +CI & 69.9 & 1422 & 73.6 & 71.3 \\
+\quad +CI+LitLLM & \cellcolor{gray!20}71.9 & \cellcolor{gray!20}1463 & 76.0 & 68.4 \\
+\quad +CI+RB & 63.8 & 1299 & 85.6 & 46.3 \\
+\quad +CI+LitLLM+RB & 63.6 & 1195 & 88.0 & 44.5 \\
+\midrule
+Pedagogical ($\phi$) & \cellcolor{gray!20}75.5 & \cellcolor{gray!20}1345 & 70.3 & 80.5 \\
+\quad +CI & 70.5 & 1256 & 45.4 & 90.9 \\
+\quad +CI+LitLLM & 68.2 & 1216 & 48.7 & 88.8 \\
+\quad +CI+RB & 61.9 & 1103 & 78.9 & 49.9 \\
+\quad +CI+LitLLM+RB & 63.0 & 1122 & 76.3 & 49.8 \\
+\midrule
+Empiricist ($\phi$) & 69.1 & 1502 & 84.0 & 55.9 \\
+\quad +CI & 64.8 & 1427 & 43.8 & 86.3 \\
+\quad +CI+LitLLM & \cellcolor{gray!20}70.7 & \cellcolor{gray!20}1558 & 45.4 & 87.1 \\
+\quad +CI+RB & 59.7 & 1316 & 75.7 & 47.8 \\
+\quad +CI+LitLLM+RB & 60.4 & 1332 & 73.5 & 48.5 \\
+\bottomrule
+\end{tabular}
+\end{wraptable}
+
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/combined_confusion_matrices_2way.pdf}
+    \caption{Confusion Matrices for binary Classification Task}
+    \label{fig:combined_cm_2way}
+\end{figure}
+
+\paragraph{Reviewer Performance.}\shrink[0.75]
+Table~\ref{tab:main_results} reports the performance of \textsc{ReviewerToo} agents, supervised baselines, and human references.
+Figure~\ref{fig:f1_plot} visualizes the F1 Scores from that table.
+Among single-agent reviewers, the \textsc{Empiricist}, \textsc{Pedagogical}, and \textsc{Theorist} personas achieve the strongest overall performance on the 5-way classification task, with the \textsc{Empiricist} attaining the highest precision (32.5) while \textsc{Theorist} secures the best F1 score (22.6). In terms of binary accept/reject accuracy, these reviewers approach 70\% accuracy, narrowing the gap to human baselines.  
+Ensembling further boosts performance: majority voting improves stability, while the metareviewer aggregation (``Meta (all)'') outperforms both single-agent and majority ensembles across all metrics, reaching 32.1 precision, 32.4 recall, and 28.1 F1 on the 5-way task, and 81.8\% accuracy on the binary task. This model also achieves the strongest ELO score of 1657, surpassing all other agents and aligning closely with the top-1\% human baseline.
+
+\paragraph{Error Analysis via Confusion Matrices.}\shrink[0.75]
+Figures~\ref{fig:combined_cm_2way}--\ref{fig:combined_cm_5way} present normalized confusion matrices for each agent. We observe consistent difficulty in distinguishing between ``oral'' and ``spotlight'' accept decisions across nearly all personas, indicating sensitivity to fine-grained acceptance tiers. Expectedly, the \textsc{Permissive} persona over-predicts acceptance decisions, while the \textsc{Critical} persona strongly favors rejection. By contrast, the \textsc{Empiricist} and \textsc{Pedagogical} show more balanced error profiles, though they still over-predict rejections relative to ground truth. These error modes highlight both biases induced by personas and systematic challenges in conference calibration.
+
+\paragraph{Reviewer Agreement.}\shrink[0.75]
+We quantify inter-reviewer consistency using Cohen’s $\kappa$ (Figure~\ref{fig:cohen_kappa}). Agreement levels vary substantially across personas: \textsc{Majority} and \textsc{Default} show moderate alignment ($\kappa \approx 0.5$), while \textsc{Permissive} and \textsc{Critical} show near-zero or even negative agreement with other reviewers, underscoring their extremal tendencies. Human reviewers exhibit low to moderate agreement with LLM reviewers ($\kappa \approx 0.1$--$0.2$), consistent with known levels of disagreement in real peer review. Ensembles such as \textsc{Majority} and \textsc{Meta} yield higher agreement with ground truth, validating aggregation as a stabilizing mechanism.
+
+\paragraph{Review Quality and ELO.}\shrink[0.75]
+Beyond predictive accuracy, we assess review quality through LLM-based pairwise judgments, aggregated with ELO ratings. The \textsc{Meta (all)} agent again dominates, achieving the highest ELO of 1657. Among single-agent reviewers, the \textsc{Empiricist} leads with 1558, while the \textsc{Pedagogical} and \textsc{Theorist} trail but still outperform most supervised baselines. Interestingly, human reviewers exhibit a striking disparity: the average human ELO is very low (540), yet the top 1\% of human reviewers achieve an ELO of 1316, comparable to the best single-agent reviewers. At the same time, both average and top-1\% humans maintain strong binary F1 performance (83.8 and 90.4, respectively). This suggests that while humans are highly effective at holistic judgments of paper quality, the textual reviews they produce are often less helpful by the criteria used in our LLM-as-judge framework--particularly with respect to actionability and usefulness to authors. These findings reinforce the potential of structured protocols, diversity, and meta-reviewing to not only improve decision alignment but also to generate more constructive review text.
+
+\paragraph{Comparison with Supervised Baselines.}\shrink[0.75]
+Supervised baselines such as XGBoost and BERT fine-tuning achieve modest predictive performance, with binary F1 scores ranging from 43.2 to 65.3. In contrast, \textsc{ReviewerToo} agents not only match or exceed these baselines in decision accuracy but also generate substantive reviews that achieve competitive or superior ELO ratings. Unlike humans, who remain strong on both axes--achieving high binary F1 performance while also producing text that can be judged for quality--supervised models cannot bridge the gap between decision fidelity and helpful feedback. This underscores the unique advantage of structured reviewer agents in combining predictive alignment with author-facing utility.
+
+\paragraph{Ablation Studies.}\shrink[0.75]
+Table~\ref{tab:ablation} examines the impact of conditioning variables. Removing conference instructions systematically reduces both F1 and ELO, indicating their critical role in reviewer fidelity. For example, the \textsc{Empiricist} with full conditioning (+CI+LitLLM) achieves the highest ELO (1558), whereas ablations removing literature grounding drop performance sharply (e.g., ELO $\leq 1332$). Interestingly, \textsc{Pedagogical} shows the highest raw F1 score (75.5) in its base persona, though its ELO is lower, suggesting less consistent quality under comparative evaluation. Overall, ablations confirm the complementary value of structured conference context, literature retrieval.
+We also see that the F1 score for all the reviewer agents drops post rebuttal.
+Upon closer inspection, we note that this is due to an increase in false positives post discussion while both false negatives and true negatives decrease (compare CI+LitLLM v/s CI+LiLLM+RB rows in Table~\ref{tab:ablation}).
+This may hint towards sycophantic tendencies of LLMs to accept papers after reading the rebuttals, as from their point-of-view, they come from real humans.
+The increase in false positives can also be visually seen confusion matrices for different reviewer agents before and after discussion (see Figure~\ref{fig:combined_cm_2way} v/s Figure~\ref{fig:combined_cm_2way_after} \& Figure~\ref{fig:combined_cm_5way} v/s Figure~\ref{fig:combined_cm_5way_after}).
+
+\paragraph{Qualitative Examples.}\shrink[0.75]
+We show the reviews generated for two papers, one from the accept category (PaperID: 6Mxhg9PtDE) and one from the reject category (PaperID: j7b4mm7Ec9). For each paper, we compare the reviews written by the top-3 reviewer agents (pedagogical, empiricist, and theorist) with a human review (we only include one human review but the links to the full threads are provided). Full examples are provided in Appendix \ref{app:review_eg}.
+\textbf{For the accepted paper}, we observe that the reviewer agents not only reach the same accept decision as the human reviewers but also produce comprehensive and well-structured feedback, covering key aspects such as novelty, clarity, and experimental rigor. This consistency suggests that, for strong submissions, the agents are capable of recognizing high-quality research and articulating reasoned justifications similar to human reviewers.
+\textbf{The rejected paper} presents a more nuanced case. Interestingly, while all human reviewers gave positive (accept) scores, the meta-reviewer's final decision was to reject the paper. Notably, some of our reviewer agents also assigned reject decisions for similar reasons as the metareviewer (revolving around the true robustness of the proposed approach). This alignment with the final decision, despite divergence from the human reviewers' initial scores, indicates that the agents can independently identify underlying weaknesses in a paper that might be overlooked in human assessments. Such behavior demonstrates the potential of AI reviewer agents to provide balanced, critical evaluations and to meaningfully contribute to peer review deliberations.
+
+\paragraph{Summary.}\shrink[0.75]
+Taken together, these results demonstrate that \textsc{ReviewerToo} can reasonably approximate human-level decision making, especially when aggregating diverse reviewers through metareview protocols. Single-agent personas exhibit distinctive biases, but structured ensembles yield both higher predictive accuracy and higher judged review quality. Agreement analysis highlights persistent reviewer variance, mirroring human peer review. Finally, ablation studies confirm that conference conditioning, rebuttals, and literature access are each essential to closing the gap with human reviewers.
+
+
+
+% \section{Results}
+% \paragraph{Reviewer Performance}\shrink[0.75]
+% We report the performance of reviewer agents from our framework as well other baselines discussed in Section~\ref{sec:baselines} in Table~\ref{tab:main_results}.
+% For brevity, we only include the performance of top-3 reviewer agents in Table~\ref{tab:main_results} but we provide detailed confusion matrices for all the agents for both 5-way and binary tasks in Figures~\ref{fig:combined_cm_5way} and ~\ref{fig:combined_cm_2way}, respectively.
+% We choose the top 3 reviewer agents by computing an F score between the binary F1-score and ELO scores (complete ELO scores report in Table~\ref{tab:reviewer_elo} of Appendix~\ref{app:elo-judging}. We normalize ELO scores by 100 to make the ranges comparable for the two metrics.
+% We also report the pairwise Cohen's $\kappa$ different reviewers in Figure~\ref{fig:cohen_kappa}.
+
+
+% \begin{itemize}
+%     \item \textbf{Enthusiastic reviewers} (e.g., \textit{permissive}, \textit{big\_picture}, \textit{metareviewer}) exhibit a strong bias toward \textit{acceptance}, often labeling nearly all papers as ``accept (spotlight/poster).'' While this yields high recall for accepted papers, it also inflates false positives for rejected ones.
+    
+%     \item \textbf{Critical and reproducibility-focused reviewers} are consistently conservative, heavily skewed toward \textit{rejection} or \textit{desk rejection}. For instance, the \textit{reproducibility} persona classified over 80\% of papers as ``reject,'' regardless of true label.
+    
+%     \item \textbf{Balanced reviewers} (\textit{default}, \textit{empiricist}, \textit{lecun}) achieve moderate alignment with ground truth, capturing both acceptance and rejection cases with less systematic bias.
+    
+%     \item \textbf{Notable archetypes}:
+%     \begin{itemize}
+%         \item \textit{Theorist} emphasizes oral/spotlight distinctions, aligning with selective acceptance patterns.
+%     \end{itemize}
+% \end{itemize}
+
+% These findings suggest that no single reviewer persona consistently approximates human decision-making, but their complementary strengths could be leveraged in ensemble settings.
+
+% \paragraph{Ablations.} \shrink[.75]  
+% We ablate key components: (i) removing the literature-review stage degrades both 5-way and 2-way metrics for balanced personas (\textit{default}, \textit{empiricist}); (ii) switching from single to multi-persona ensembles improves robustness but can amplify bias if dominated by permissive or conservative clusters; (iii) enabling post-rebuttal reviewer responses (v2) generally reduces agreement with ground truth across most personas (Table: v2 before $\to$ after), indicating that single-turn rebuttals—without additional evidence—may trigger over-corrections. We summarize the key agreement results in Tables~\ref{tab:gt_agreement} and Figures~\ref{fig:reviewer_agreement} and~\ref{fig:agent_agreement}.
+
+% \paragraph{Ensemble behavior.}\shrink[.75]  
+% Majority voting across personas achieves strong 2-way macro scores in v1, but can drop in v2 after rebuttals. Agreement patterns (Figure~\ref{fig:reviewer_agreement}) reveal cluster sensitivities: blending \textit{permissive} with \textit{critical/reproducibility} reduces variance but requires careful weighting to avoid systematic skew.
+
+% We illustrate representative review–rebuttal–decision trajectories. Common patterns include: (i) \textit{clarification wins}, where rebuttals resolving evaluation-protocol confusion improve \textit{critical} and \textit{reproducibility} assessments pre-metareview; (ii) \textit{evidence gaps}, where claims without additional experiments fail to sway conservative personas; (iii) \textit{scope realignment}, where \textit{big\_picture} reframes contributions to align with venue scope, leading to upgraded recommendations.
+
+% \subsection{Reviewer Agreement Patterns}
+
+% The pairwise agreement matrix (Figure~\ref{fig:cohen_kappa}) shows meaningful clustering:
+
+% \begin{itemize}
+%     \item \textbf{Permissive cluster}: (\textit{big\_picture}, \textit{permissive}, \textit{metareviewer}) strongly agree with each other, reflecting their shared pro-acceptance bias.
+%     \item \textbf{Conservative cluster}: (\textit{critical}, \textit{reproducibility}) form a distinct group with high agreement in rejection-heavy evaluations.
+%     \item \textbf{Hybrid reviewers} (\textit{default}, \textit{empiricist}, \textit{pragmatist}, \textit{lecun}) exhibit moderate agreement with both clusters, acting as bridges.
+%     \item \textbf{Theorist} stands apart, showing unique alignment patterns, emphasizing selectivity rather than blanket rejection/acceptance.
+% \end{itemize}
+
+% Interestingly, the \textit{metareviewer} aligns more closely with permissive reviewers than with conservative ones, echoing the tendency of meta-reviewers to favor borderline acceptances over hard rejections.
+
+
+\section{Discussion}
+
+Our experiments on the ICLR-2k dataset provide a first large-scale analysis of how LLM-based reviewer agents perform relative to humans, supervised classifiers, and ensemble protocols. The results reveal both opportunities and limitations of using AI in peer review. Here, we synthesize these findings into broader lessons and propose practical guidelines for integrating AI into peer-review pipelines.
+
+\paragraph{AI reviewers approximate but do not replace humans.} \shrink[0.75]
+The results show that single-agent reviewer personas achieve accuracy close to 70\% on the binary accept/reject task, narrowing the gap with human baselines. However, their five-way performance remains substantially lower, and confusion matrices highlight consistent difficulty in distinguishing fine-grained acceptance tiers (e.g., oral vs.\ spotlight). This suggests that LLM reviewers can approximate coarse-grained decision making, but conference-level calibration still requires human expertise. Importantly, human reviewers maintain higher binary F1 scores, underscoring their ability to holistically evaluate paper quality.
+
+\paragraph{Ensembles and metareviewing stabilize and improve fidelity.} \shrink[0.75]
+Our ensemble protocols consistently outperform single-agent reviewers, with the \textsc{Meta (all)} agent achieving the strongest results across accuracy, F1, and ELO. Aggregating multiple perspectives reduces individual biases (e.g., permissive vs.\ critical personas) and yields more reliable decision-making. This mirrors existing human peer review, where program committees rely on multiple reviews and meta-review synthesis to mitigate individual noise. Our findings indicate that metareviewing is a crucial design principle for AI-assisted peer review.
+
+\paragraph{Quality of review text remains a challenge.} \shrink[0.75]
+ELO ratings highlight that while reviewer agents can generate more constructive feedback than supervised baselines, the quality of their review text is not always aligned with human expectations. Average human reviews perform poorly under ELO, suggesting that even human-authored text often fails on criteria such as actionability and helpfulness to authors. At the same time, the top 1\% of human reviewers achieve high ELO, showing that exemplars exist. These results caution that AI reviews should be seen as complements--providing structured, constructive feedback--rather than replacements for nuanced human judgment.
+
+\paragraph{Rebuttals introduce sycophancy risks.} \shrink[0.75]
+Ablation studies reveal that performance systematically drops after rebuttal rounds, potentially due to sycophantic tendencies of LLMs: they may defer excessively to rebuttals without maintaining independent judgment. This highlights a need for careful design of how LLM reviewers handle author feedback. Safeguards, such as explicit calibration instructions or adversarial prompting, may be required to prevent performance degradation in rebuttal phases.
+
+\paragraph{Reviewer agreement mirrors human inconsistency.} \shrink[0.75]
+Pairwise Cohen’s $\kappa$ shows that LLM reviewers vary substantially in their agreement, with some personas (e.g., permissive, critical) diverging strongly from others. This echoes longstanding challenges in human peer review, where reviewer disagreement is common. Our findings suggest that AI reviewers will not eliminate variance in peer review but can be structured to reduce it through ensembles and consensus protocols.
+
+\subsection{Guidelines for Integrating AI into Peer Review} \shrink[0.75]
+
+From these quantitative and qualitative findings, we propose a set of guidelines for integrating AI into peer-review pipelines:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Use AI reviewers as complements, not replacements.} LLM reviewers can provide scalable, structured feedback and approximate decision accuracy, but final judgments should remain with humans, particularly for borderline and high-stakes decisions.
+    \item \textbf{Prioritize ensemble protocols.} Single-agent reviewers exhibit strong biases; aggregation through majority voting or metareviewing produces more reliable and fair outcomes. AI systems in peer review should default to ensemble-based designs.
+    \item \textbf{Incorporate structured conditioning.} Conference-specific guidelines, literature retrieval, and rebuttal phases each add value, but must be carefully balanced to avoid overfitting or sycophancy. Conditioning improves fidelity, but uncritical incorporation of rebuttals can degrade performance.
+    \item \textbf{Evaluate not just accuracy, but also review quality.} Our ELO analysis highlights that decision fidelity alone is insufficient; reviews must also be actionable and useful to authors. AI reviewers should be explicitly optimized for feedback quality as well as predictive accuracy.
+    \item \textbf{Human-AI collaboration as the design goal.} The stark gap between average and top-1\% human reviewers suggests a role for AI in ``raising the floor'': providing consistent, constructive baseline reviews that can complement and support human judgment, rather than competing with it.
+    \item \textbf{Mitigate bias and disagreement through protocol.} Extremal personas can systematically over- or under-predict acceptance. Careful design of reviewer ensembles and meta-review synthesis is essential to reduce variance and ensure fairness in outcomes.
+\end{enumerate}
+\section{Conclusion}
+Peer review is central to scientific publishing but remains plagued by inconsistency, subjectivity, and scalability limits. We introduced \textsc{ReviewerToo}, a modular framework for AI-assisted peer review that leverages structured reviewer personas, ensemble protocols, and systematic evaluation. On the ICLR-2k dataset, LLM reviewers approached human-level decision accuracy—especially under metareviewing—and produced reviews often judged more constructive than the human average. Yet challenges such as fine-grained calibration, susceptibility to sycophancy during rebuttals, and variable persona agreement highlight the continued need for human expertise. From these results we propose guidelines for hybrid peer review: deploy AI reviewers as complements rather than replacements, prioritize ensembles and meta-review protocols, condition agents with structured context, and optimize for both review quality and decision fidelity. With such workflows, AI can enhance consistency, coverage, and fairness, while humans provide the nuanced judgments essential for advancing science.
+
+\section{Ethics Statement}
+This work involves the use of publicly available data from the OpenReview
+ platform, which hosts peer review information for academic conferences. We strictly adhered to OpenReview’s terms of use and community guidelines in collecting and analyzing this data. All data used were publicly accessible at the time of collection and we did not pass any personally identifiable information to the LLM beyond what was intentionally made public by authors or reviewers.
+
+The goal of this research is to improve the transparency, scalability, and fairness of the peer review process. Our experiments are designed to complement, not replace, human reviewers, with the intent of assisting editorial processes and studying the potential of AI tools in structured academic evaluation. We emphasize that ReviewerToo is meant for research and controlled integration scenarios, and not for unsupervised or fully automated decision-making in academic publishing.
+
+Finally, the use of large language models in review generation and evaluation was conducted with attention to ethical implications, including the risks of bias propagation, overreliance on model outputs, and possible reinforcement of systemic inequities. We provide concrete guidelines and limitations in our discussion to promote responsible adoption of AI-assisted review systems.
+
+% \section{Discussion}
+
+% Our results highlight three key insights:
+
+% \begin{enumerate}
+%     \item \textbf{Diversity mirrors human reviewer dynamics.} The spread of reviewer behaviors--from permissive to critical--parallels real-world reviewer subjectivity. ReviewerToo thus offers a faithful testbed for studying review disagreement.
+    
+%     \item \textbf{Biases are systematic, not random.} Certain personas systematically inflate acceptance (e.g., \textit{permissive}) or rejection (\textit{reproducibility}), suggesting that hybrid ensembles could correct for these imbalances.
+    
+%     \item \textbf{Meta-review emulation remains challenging.} While the \textit{metareviewer} agent partially approximates final decisions, it inherits biases from permissive agents. Building robust meta-reviewers may require explicit balancing across reviewer philosophies.
+% \end{enumerate}
+
+% Overall, ReviewerToo demonstrates that AI reviewers can not only approximate human review outcomes but also model reviewer diversity in a controlled manner. These findings pave the way for future work on \textit{AI-assisted program committees}, where ensembles of reviewer personas could provide both diversity and consistency at scale.
+
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=\linewidth]{figures/f1_plot.png}
+%     \caption{v0 = w/o conference instructions, v1 = w/ conference instructions, v2 = w/ conf instructions + rebuttal response from reviewers}
+%     \label{fig:f1_plot}
+% \end{figure}
+
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=\linewidth]{figures/elo_basic.png}
+%     \caption{ELO progression of different reviewer agents. The graph is capped at around 15k matches but there were in total more than 100k matches. \textbf{Note} The figure will be improved upon.}
+%     \label{fig:elo_curves_reviewing}
+% \end{figure}
+
+
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.5\linewidth]{figures/agreement_summary_matrix.pdf}
+%     \caption{agreement between human reviewers and metareviewers}
+%     \label{fig:agent_agreement}
+% \end{figure}
+
+
+% \begin{table}[t]
+%   \centering
+%   \caption{ICLR 2025 dataset statistics. The subset (1{,}963) is stratified and label-balanced for diagnostics; the full set (11{,}672) is used for all main experiments. Data were downloaded from OpenReview. \textbf{Note:} The ``Reject'' category in ICLR-12K has the original 5019 ``Reject'' papers + 2875 ``Withdrawn'' papers.}
+%   \label{tab:iclr-dataset-stats}
+%   \resizebox{\textwidth}{!}{
+%       \begin{tabular}{lrrrrrr}
+%         \toprule
+%         \textbf{Version} & \textbf{Total} & \textbf{Accept (Oral)} & \textbf{Accept (Spotlight)} & \textbf{Accept (Poster)} & \textbf{Reject} & \textbf{Desk Reject} \\
+%         \midrule
+%         ICLR-2K & 1{,}963 & 213 & 380 & 300 & 1000  & 70 \\
+%         ICLR-12K & 11{,}672 & 213 & 380 & 3115 & 7894 & 70 \\
+%         \bottomrule
+%   \end{tabular}
+%   }
+% \end{table}
+
+
+% \begin{table}[h]
+% \centering
+% \caption{Global Agreement Statistics}
+% \label{tab:gt_agreement}
+% \begin{tabular}{l c}
+% \toprule
+% \textbf{Metric} & \textbf{Value} \\
+% \midrule
+% Inter-reviewer agreement & 0.8661 \\
+% Reviewer--Metareviewer agreement & 0.8394 \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
+\bibliography{iclr2025_conference}
+\bibliographystyle{iclr2025_conference}
+% \clearpage
+\appendix
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.95\linewidth]{figures/combined_confusion_matrices_2way.pdf}
+%     \caption{Confusion Matrices for binary Classification Task}
+%     \label{fig:combined_cm_2way}
+% \end{figure}
+
+
+
+
+\section{LLM Usage}
+We have used LLMs to improve the text. Specifically, we have use chatGPT to improve the language of some paragraphs and we have used LitLLM to retrieve relevant works.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{figures/pairwise_cohen_kappa.pdf}
+    \caption{Pairwise Cohen's $\kappa$ for different types of reviewers}
+    \label{fig:cohen_kappa}
+\end{figure}
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/combined_confusion_matrices_2way_after.pdf}
+    \caption{Confusion Matrices for binary Classification Task Post-Discussion}
+    \label{fig:combined_cm_2way_after}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/combined_confusion_matrices_5way.pdf}
+    \caption{Confusion Matrices for 5-way Classification Task}
+    \label{fig:combined_cm_5way}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/combined_confusion_matrices_5way_after.pdf}
+    \caption{Confusion Matrices for 5-way Classification Task Post-Discussion}
+    \label{fig:combined_cm_5way_after}
+\end{figure}
+
+
+
+
+% \subsection{Efficiency and cost.}
+% \label{app:efficiency}
+% We report practical metrics for conference-scale deployment: 
+% (i) \textbf{Wall-clock time} per paper and per stage (review, rebuttal, metareview) under bounded concurrency; 
+% (ii) \textbf{Throughput}, in papers/hour on 8$\times$H100 GPUs; 
+% (iii) \textbf{Token usage}, total prompt+completion tokens per paper; and 
+% (iv) \textbf{Compute/API cost}, estimated from GPU logs.
+% These quantify the accuracy–scalability trade-offs of different pipeline configurations.
+
+
+\section{LLM-as-a-Judge Protocol For ELO}
+\label{app:elo-judging}
+We use the following update formula for ELO:
+\[
+R'_A = R_A + K \cdot (S_A - E_A), \qquad
+E_A = \frac{1}{1 + 10^{(R_B - R_A)/400}},
+\]
+where $R_A$ is the rating of system $A$, $S_A \in \{0, 0.5, 1\}$ is the observed score, and $K$ is the update constant.
+This produces a comparative ranking of review-writing quality across human and AI reviewers that integrates all five evaluation dimensions.
+
+To ensure reliability and fairness in our LLM-based ELO evaluations, we use: 
+%adopt the following safeguards:
+
+\paragraph{Blinding.} \shrink[.75] 
+All reviews are anonymized prior to evaluation. System identities (e.g., ``human,'' ``persona X,'' ``metareviewer'') are removed, and formatting is standardized so that the judge cannot infer the source from stylistic cues.
+
+\paragraph{Randomization.} \shrink[.75] 
+For each pairwise comparison, the left/right order of reviews is randomized. The prompt to the judge LLM explicitly instructs it not to infer authorship based on order or style.
+
+% \paragraph{Multiple seeds and judges.} \shrink[.75] 
+% To reduce sensitivity to sampling variance, we repeat each comparison across multiple random seeds of the same LLM. For robustness, we also validate on at least one alternative model family (see Table~\ref{} in the appendix).
+
+\paragraph{Outcome aggregation.} \shrink[.75] 
+The raw win/loss/draw outcomes are aggregated into ELO ratings using the logistic update formula described earlier in this section. For stability, we initialize all systems with identical ratings of 1{,}000 and use a moderate update constant ($K=32$) for the first 30 matches of an agent, then reduced to $K=16$ until the agent has played 500 matches, after which, it is fixed to $K=10$. Final ratings are reported after convergence over the full set of pairwise matches.
+
+\paragraph{Match stratification.} \shrink[.75] 
+In large-scale settings, the number of possible review pairs can approach one million, which is computationally prohibitive. When fewer comparisons are run than the full set of possible matches, we employ a \textbf{stratified sampling strategy}: matches are distributed proportionally across (i) distinct query papers, and (ii) distinct parent review sources (e.g., human, persona, metareviewer). This ensures balanced coverage of both paper-level diversity and system-level diversity, while keeping the number of matches tractable.
+
+\paragraph{Quality control.} \shrink[.75] 
+A random subset of judgments (5\%) is manually inspected by the authors to verify adherence to the evaluation rubric. Discrepancies between human inspection and the LLM judge are rare ($<3\%$) and do not materially affect rankings.
+
+\paragraph{ELO Scores}
+\begin{table}
+\centering
+\caption{Reviewer Persona ELO.}
+\label{tab:reviewer_elo}
+\begin{tabular}{cc}
+\toprule
+\textbf{Reviewer Persona} & \textbf{ELO}$^{\uparrow}$ \\
+\midrule
+big\_picture & 364 \\
+critical & 423 \\
+permissive & 880 \\
+reproducibility & 989 \\
+default & 1136 \\
+pedagogical & \textbf{1345} \\
+pragmatist & 1182 \\
+empiricist & \textbf{1558} \\
+theorist & \textbf{1463} \\
+visionary & {1097} \\
+impact & {1121} \\
+probabilistic & {1189} \\
+fairness & {1154} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Qualitative Examples}
+\label{app:review_eg}
+
+
+\begin{reviewbox}{\href{https://openreview.net/forum?id=6Mxhg9PtDE}{Paper 6Mxhg9PtDE (Real Decision: Oral) (Real Decision: Oral)}}{LightSkyBlue}{Human Review}
+\scriptsize
+\paragraph{Summary:}\leavevmode\\[0.1em]
+This paper demonstrates the shallow safety alignment issue through a variety of case studies. Essentially, the authors show that a variety of alignment attacks are successful because of a common issue within safety-aligned LLMS: only the first few output tokens are adapted during the model alignment process. Then the paper offers ways to mitigate this problem, which includes a data augmentation approach and a constrained optimization loss function.
+
+
+\paragraph{Strengths:}\leavevmode\\[0.1em]
+\begin{itemize}
+    \item The paper is addressing an important problem, the vulnerability of safety alignment for LLMs, that can be very useful to real world problems.
+    \item The paper ties together prior works in a way that makes it easier to learn from them (i.e. highlighting the common thread amongst successful alignment attacks: their exploitation of shallow safety alignment).
+    \item The contributions of this paper lay the groundwork for future safety alignment solutions. They do offer a couple mitigation strategies, but exposing the shallow alignment issue could inspire many more mitigation approaches. It could also help us understand the success of other attacks and the success/failure of existing attack mitigation strategies.
+    \item The paper includes a good variety of experiments (models, datasets, attacks types) and includes both empirical and theoretical support for their claims.
+    \item The paper flows nicely. It is nicely organized. This makes the paper easy to follow and it makes the main point/contribution of the paper very clear.
+\end{itemize}
+
+\paragraph{Weaknesses:}\leavevmode\\[0.1em]
+The explanation of related work is lacking. The related works are listed, but there is not much information that actually explains how your work differs from related work. For instance, you say “some works have also noted asymmetries...” But it would be nice to know how this differs from what you’ve observed. A lot of the statements you make about related work are very broad and could benefit from more detail. “Our work ties these potential failure modes…to potential shortcuts” - does your work do this for all pre-existing methods for improving alignment? Are there some failures that your work does not encapsulate? Also, you never seem to mention any solutions to these alignment failures. Are your methods (e.g. the data augmentation and constrained optimization) the only known mitigation strategies? If so, you should state this. If not, other mitigation strategies should be mentioned.
+
+After applying your mitigation strategies, the ASR is still not zero and often isn’t even that close to zero. This isn’t ever really explained in the paper. You at one point say “the augmented model is still vulnerable…”, but the paper would be stronger if you give more explanation. For instance, does the non-zero ASR mean that there is some other vulnerability apart from the shallow alignment issue? Or are your strategies just not fully fixing the shallow alignment problem?
+
+Your contribution would be stronger if it were explained more clearly. When you say things like “this work is the first work attempting to consolidate the unified notion behind these attacks…” I don’t quite understand what you mean. If other works have identified the shallow safety alignment effect, then what does it mean for you to “consolidate the unified notion”? Is shallow safety alignment a new term that you are introducing, because if so, I think you should make it more clear that you are introducing this new concept?
+
+It is also hard to imagine this problem in a real-world setting/application. The paper would be stronger if, for example in the introduction, we were given an example of the effect that jailbreaks can have (e.g. him what scenario would some attacker be able to provide a deployed model with the start to a response)
+
+\paragraph{Questions:}\leavevmode\\[0.1em]
+\begin{itemize}
+    \item Why do you think the ASR still isn’t 0 (and in many cases is not close to 0) after using your mitigation strategies?
+    \item It seems like there could potentially be problems with the data augmentation approach since you are providing the model with these strange texts (e.g., you mention that the new texts are not coherent). Do you think that this matters? Is the model’s learning going to be compromised when it is learning with these incoherent texts?
+\end{itemize}
+
+\textbf{Rating: 10: strong accept, should be highlighted at the conference}
+\end{reviewbox}
+
+\begin{reviewbox}{\href{https://openreview.net/forum?id=6Mxhg9PtDE}{Paper 6Mxhg9PtDE (Real Decision: Oral)}}{LightRed}{Empiricist}
+\scriptsize
+\paragraph{Summary of Contributions}
+\leavevmode\\[0.1em]
+The paper introduces the notion of \textbf{shallow safety alignment}, i.e., that current alignment procedures for large language models (LLMs) mainly modify the probability distribution of the first few output tokens to induce a refusal prefix. The authors provide:
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+  \item Empirical evidence (per-token KL divergence, token-wise loss and gradient analyses) that alignment effort is concentrated on early tokens.
+  \item A unified explanation of several known jailbreak and fine-tuning attacks as consequences of this shallow alignment.
+  \item Two mitigation strategies:
+  \begin{itemize}
+    \item \textbf{Data-augmentation “deep safety alignment”} that mixes safety-recovery examples (harmful prefix $\rightarrow$ safe continuation) into continued fine-tuning.
+    \item \textbf{A token-wise constrained fine-tuning objective} that penalises deviation from the original aligned model more strongly on the first few tokens.
+  \end{itemize}
+  \item Extensive experiments on Llama-2-7B-Chat and Gemma-1.1-7B-IT showing reduced attack success rates (ASR) on prefilling, GCG, decoding-parameter, and fine-tuning attacks, while preserving utility on standard benchmarks (AlpacaEval, MMLU, BBH, MATH, GSM8K).
+\end{enumerate}
+
+\paragraph{Strengths}
+\begin{center}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}lp{12cm}}
+\toprule
+\textbf{Aspect} & \textbf{Comments} \\
+\midrule
+\textbf{Empirical rigor} & The paper systematically quantifies token-wise KL divergence and gradient norms, and links these to observed vulnerabilities. \\
+\textbf{Unified perspective} & Provides a clear, parsimonious explanation that ties together a variety of jailbreak and fine-tuning attacks under a single mechanism. \\
+\textbf{Mitigation proposals} & Both the data-augmentation and constrained-fine-tuning approaches are simple to implement and require only modest additional compute. \\
+\textbf{Experimental breadth} & Evaluates on multiple models, several attack families, and a suite of utility benchmarks. \\
+\textbf{Reproducibility details} & Appendices contain compute resources, optimizer settings, hyper-parameter values, and ablation studies. \\
+\textbf{Ethical awareness} & Includes an ethics statement acknowledging the dual-use nature of the work. \\
+\bottomrule
+\end{tabular}}
+\end{center}
+
+\paragraph{Weaknesses}
+\begin{center}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{p{3cm}p{13cm}}
+\toprule
+\textbf{Issue} & \textbf{Impact} \\
+\midrule
+Reliance on GPT-4 automatic judging & Safety evaluation depends on a single black-box judge; no human verification or inter-annotator agreement is reported, raising concerns about label noise. \\
+Limited statistical analysis & Results are reported as mean$\pm$std over 3 runs (or 10 for GCG). No significance testing or confidence intervals; the small number of seeds may mask variability. \\
+Scope of models and data & Experiments are limited to $\sim$7B-parameter models and a modest augmentation set (256 triplets). Generalisation to larger models or different alignment pipelines (e.g., RLHF vs DPO) is not demonstrated. \\
+Definition of “deep” alignment & The term is operationalised only through the proposed augmentation; alternative ways of deepening alignment (e.g., longer refusal prefixes, hierarchical prompts) are not explored. \\
+Utility trade-off & While utility scores drop only slightly, the paper does not analyse qualitative impact on instruction-following; some degradation is visible (e.g., AlpacaEval loss from 51.8\% to 49.5\%). \\
+Over-claiming & The conclusion that “future safety alignment should be made more than just a few tokens deep” is plausible but not fully substantiated beyond the attacks studied. \\
+Ablation depth & The ablation on the number of “deep” tokens (parameter $C$) shows diminishing returns beyond $\sim$100 tokens, but the paper does not discuss practical limits of how deep alignment can realistically be made. \\
+Comparison to strongest baselines & The constrained fine-tuning is compared to “Standard SFT” and “Vaccine,” but not to more recent jailbreak-defense techniques (e.g., self-refine, circuit-breakers). \\
+\bottomrule
+\end{tabular}}
+\end{center}
+
+\paragraph{Questions for the Authors}
+\leavevmode\\[0.1em]
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+  \item \textbf{Human verification} – Did you manually inspect a subset of GPT-4 judgements to estimate label accuracy? If not, could you provide a small human-annotated validation set?
+  \item \textbf{Seed sensitivity} – How much do the ASR numbers vary across random seeds (especially for the constrained fine-tuning)? Have you tried more than three repeats?
+  \item \textbf{Generalisation to larger models} – Do you have preliminary results on 13B or 70B-scale models, or on models aligned with pure RLHF rather than the proprietary pipeline used for Llama-2-Chat?
+  \item \textbf{Effect on non-harmful instruction following} – Beyond aggregated utility metrics, does the constrained objective affect the style or length of benign responses?
+  \item \textbf{Computational overhead in practice} – The constrained loss requires storing per-token probabilities of the original aligned model. How does this scale to models with $>$10B parameters and longer context windows?
+\end{enumerate}
+
+\paragraph{Suggestions for Improvement}
+\leavevmode\\[0.1em]
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+  \item Include a small human-rated safety benchmark to validate GPT-4 judgments and report inter-annotator agreement.
+  \item Increase the number of random seeds ($\ge5$) and report confidence intervals or perform hypothesis tests to substantiate the observed reductions in ASR.
+  \item Test the methods on at least one larger model (e.g., Llama-2-13B-Chat) and on a model aligned via pure RLHF to assess generality.
+  \item Compare shallow vs.\ deep alignment under different training regimes (SFT only, RLHF, DPO) to clarify whether the phenomenon is specific to the proprietary pipeline.
+  \item Provide examples of benign responses before/after mitigation to illustrate subtle shifts in style or completeness.
+  \item Expand discussion on scalability of deep alignment (diminishing returns, token budget, impact on generation latency).
+  \item Release augmentation scripts and constrained-loss implementation to facilitate reproducibility.
+\end{enumerate}
+
+\paragraph{Overall Verdict}
+\leavevmode\\[0.1em]
+The paper presents a compelling empirical diagnosis of a concrete failure mode in current LLM safety alignment and offers two practical mitigation strategies that show measurable improvements across a range of attacks. While the experimental methodology could be strengthened (human safety validation, more extensive statistical analysis, broader model coverage), the contribution is novel, analyses thorough, and mitigation ideas of immediate practical interest to the community.
+
+\textbf{Final Recommendation: Accept (Poster)}
+\end{reviewbox}
+
+\begin{reviewbox}{\href{https://openreview.net/forum?id=6Mxhg9PtDE}{Paper 6Mxhg9PtDE (Real Decision: Oral)}}{LightLimeGreen}{Theoretical}
+\scriptsize
+
+\paragraph{Summary of Contributions}\leavevmode\\[0.1em]
+The paper introduces the notion of \textbf{shallow safety alignment} – the observation that current safety-aligned large language models (LLMs) primarily modify the generative distribution of only the first few output tokens to achieve refusal behavior. The authors:
+
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item Empirically characterize this phenomenon across Llama-2 and Gemma models, showing that KL-divergence between aligned and base models is concentrated in the early token positions and that prefixed refusal tokens dramatically reduce harmfulness.
+    \item Demonstrate that a variety of known jailbreak and fine-tuning attacks (adversarial suffix, prefilling, decoding-parameter exploits, and few-step harmful fine-tuning) can be explained as exploiting this shallow alignment.
+    \item Propose two mitigation directions:
+    \begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+        \item \textbf{Data-augmentation “deep safety alignment”} that augments training data with safety-recovery examples where the model must return to a refusal after a few harmful tokens.
+        \item \textbf{Token-wise constrained fine-tuning} that penalises deviation from the original aligned distribution on early tokens via a novel regularised loss (Eq.~3).
+    \end{enumerate}
+    \item Provide extensive experiments showing that both approaches improve robustness to the attacks above while preserving utility on standard benchmarks.
+\end{enumerate}
+
+\paragraph{Strengths}\leavevmode\\[0.1em]
+\resizebox{\textwidth}{!}{
+\begin{tabular}{p{3cm}p{13cm}}
+\toprule
+\textbf{Aspect} & \textbf{Comments} \\ \midrule
+\textbf{Novel conceptual framing} & The paper formalises an intuitive observation (the “refusal-prefix shortcut”) as \emph{shallow safety alignment} and connects it systematically to a broad set of jailbreak and fine-tuning attacks. This unifying view is valuable for the safety community. \\
+\textbf{Comprehensive empirical analysis} & Per-token KL, gradient-norm, and loss-norm studies across multiple models and datasets convincingly demonstrate the early-token bias. The prefixed-prefix experiments (Table~1) are simple yet powerful. \\
+\textbf{Concrete mitigation proposals} & Both the data-augmentation and constrained-fine-tuning methods are easy to implement on top of existing pipelines, requiring only modest compute overhead (Table~12). \\
+\textbf{Thorough evaluation} & The authors evaluate against a wide suite of attacks (prefilling, GCG, decoding-parameter, OOD code attacks, fine-tuning attacks) and report utility on AlpacaEval, MMLU, BBH, MATH, GSM8K. Ablation studies on hyper-parameters, $\beta$-schedules, and warm-up are included. \\
+\textbf{Theoretical grounding} & Section~F provides a clear derivation of the constrained loss, linking it to token-wise KL-regularised RL and to a soft-plus surrogate of a max-margin objective. Theorems~1–3 give a solid interpretation of the role of $\beta$. \\
+\textbf{Ethics discussion} & The paper acknowledges that exposing failure modes can aid adversaries but argues the net benefit for safety research, satisfying the ICLR Code of Ethics. \\
+\textbf{Reproducibility} & Detailed appendix sections (B–G) list compute resources, data construction, and hyper-parameters. Code-wise the methods are straightforward. \\ \bottomrule
+\end{tabular}
+}
+
+\paragraph{Weaknesses}\leavevmode\\[0.1em]
+\resizebox{\textwidth}{!}{
+\begin{tabular}{p{3.5cm}p{13cm}}
+\toprule
+\textbf{Issue} & \textbf{Impact} \\ \midrule
+\textbf{Limited scope of “deep” alignment} & The data-augmentation approach only trains on a tiny synthetic safety-recovery set (256 examples). While it demonstrates feasibility, it is unclear how this scales to larger vocabularies, more diverse harmful content, or multi-turn dialogues. \\
+\textbf{Evaluation on a narrow model family} & Experiments focus on Llama-2-7B-Chat and Gemma-1.1-7B-IT. It remains an open question whether the findings transfer to larger models (e.g., 70B) or to models with different fine-tuning pipelines (e.g., RLHF-only). \\
+\textbf{Reliance on GPT-4 as a safety judge} & All safety metrics (harmfulness rate, ASR) are obtained via a GPT-4 classifier. Potential bias or miscalibration of this judge could affect conclusions; a human-in-the-loop validation would strengthen the claims. \\
+\textbf{Constrained loss hyper-parameter sensitivity} & While ablations on uniform vs. biased $\beta$ are provided, selecting $\beta$ values for each token position may be non-trivial in practice. The paper does not propose an automated way to set $\beta$ (e.g., based on per-token KL statistics). \\
+\textbf{Utility degradation} & Although utility drops are modest ($\approx$2–4\% on AlpacaEval), the constrained loss sometimes harms downstream performance more severely (e.g., Table~4 shows utility loss on GSM8K). The trade-off analysis could be deeper. \\
+\textbf{Missing comparison to recent “circuit-breaker” defenses} & The related work mentions short-circuiting (Zou~et~al.,~2024) but does not empirically compare against it. A head-to-head would clarify the relative merits of the proposed methods. \\ \bottomrule
+\end{tabular}
+}
+
+\paragraph{Questions for the Authors}\leavevmode\\[0.1em]
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item \textbf{Scaling of safety-recovery data} – How does performance vary when the safety-recovery set is enlarged (e.g., 1 k, 10 k examples) or when the harmful prefixes are sampled from real user queries rather than synthetic?
+    \item \textbf{Token-wise $\beta$ selection} – Did you try learning $\beta_t$ (or a schedule) from data (e.g., based on per-token KL divergence) instead of hand-crafting a step function?
+    \item \textbf{Multi-turn dialogues} – Does shallow alignment manifest similarly in multi-turn chat settings where the model can “recover” after a refusal in a later turn?
+    \item \textbf{Effect on non-refusal safe behaviors} – Some safety signals (e.g., content filtering via internal classifiers) are not captured by refusal prefixes. Does deepening alignment improve robustness to attacks that target those signals?
+    \item \textbf{Human evaluation} – Have you performed any manual verification of the GPT-4 safety judgments, especially for borderline cases (e.g., low-severity harmful content)?
+    \item \textbf{Compatibility with RLHF} – Can the constrained fine-tuning objective be combined with RLHF (e.g., as an additional KL term) without destabilising policy-gradient updates?
+\end{enumerate}
+
+\paragraph{Suggestions for Improvement}\leavevmode\\[0.1em]
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item \textbf{Broaden the safety-recovery dataset} – Include diverse harmful continuations (different domains, code, multi-modal prompts) and evaluate the impact of dataset size on deep alignment.
+    \item \textbf{Automated $\beta$ scheduling} – Propose a simple heuristic (e.g., $\beta_t \propto \mathrm{KL}_t$) or a learnable gating network to set token-wise constraints, reducing manual tuning.
+    \item \textbf{Human-in-the-loop validation} – Sample a subset of outputs for each attack and have annotators verify the GPT-4 labels; report inter-annotator agreement.
+    \item \textbf{Compare with contemporaneous defenses} – Include baselines such as the “short-circuit” method (Zou~et~al.,~2024) and the “Vaccine” approach (Huang~et~al.,~b) in the same experimental protocol.
+    \item \textbf{Evaluate on larger models} – Even a limited experiment on Llama-2-13B-Chat or a 70B model would strengthen the claim of generality.
+    \item \textbf{Ablation on multi-turn safety} – Test whether the deep alignment persists across conversational turns, perhaps using a dialogue benchmark (e.g., SafeChat).
+    \item \textbf{Improve manuscript readability} – Ensure all equations render correctly, add a schematic diagram of the shallow vs. deep alignment pipeline, and provide clearer captions for figures and tables.
+\end{enumerate}
+
+\paragraph{Overall Verdict}\leavevmode\\[0.1em]
+The paper presents a \textbf{well-motivated, theoretically grounded, and empirically substantiated} analysis of an important safety failure mode in current LLM alignment pipelines. The notion of \emph{shallow safety alignment} is novel and unifies a variety of jailbreak attacks, offering a fresh lens for the community. The mitigation strategies are simple, computationally inexpensive, and show promising improvements across a broad attack suite. While there are limitations concerning scalability, evaluation breadth, and presentation clarity, these do not undermine the core scientific contribution.
+\textbf{Final Recommendation: Accept (Spotlight)}
+\end{reviewbox}
+
+\begin{reviewbox}{\href{https://openreview.net/forum?id=j7b4mm7Ec9}{Paper j7b4mm7Ec9 (Real Decision: Reject)}}{LightSkyBlue}{Human Review}
+\scriptsize
+\paragraph{Summary:}\leavevmode\\[0.1em]
+The paper provides a proper exploration of parameter lightening for watermarking models. The problem of mismatch between the actual decoding objective and the optimization objective of the commonly used decoding loss is solved. The solution to the above problem is attempted from the point of view of adding projection blocks and proxy losses. And the impact of each block on robustness at fine granularity is discussed after subdividing the watermarking framework.
+
+\paragraph{Strengths:}\leavevmode\\[0.1em]
+For the first time, we identify the mismatch between the optimization objectives of commonly used decoding losses (e.g., mean-square error and binary cross-entropy loss) and the actual decoding objectives, and confirm the existence of such a mismatch and its impact through ablation studies, which provides a new perspective for model optimization. The proposed separable projection head (PH) and decoding-oriented alternative loss (DO) effectively mitigate the negative impact of irrelevant optimization directions, allowing the lightweight model to achieve SOTA performance while maintaining high performance. The lightweight model outperforms existing models in terms of invisibility, robustness, and efficiency for other domains with limited computational resources, and minimizes performance loss by further compressing the model with a fine-grained deep watermarking framework.
+
+\paragraph{Weaknesses:}\leavevmode\\[0.1em]
+the authors don't seem to have considered the issue of capacity, and suggest discussing this part;
+there are some spelling problems, e.g. "robust- ness" in table9 at line 1005 we know that robustness depends mainly on the type and intensity of noise added during the training phase, i.e., the NWIP module, but in the The paper does not give detailed experimental parameters, but only describes the noise parameter settings in the testing phase.
+
+\paragraph{Questions:}\leavevmode\\[0.1em]
+In terms of comparison experiments, because the main concern in watermarking is capacity, imperceptibility, robustness and efficiency. In this paper, we mainly focus on the efficiency improvement, but we should ensure that the other parameters are the same for a fair comparison.HiDDen's algorithm can guarantee that the embedding in the grey scale image of size 1616 embedded in the length of 52 bits of information, the embedded information capacity can be up to 0.203 BPP. And the image used in this paper is a 3128*128 colour image, the embedded information length is 64 bits, the capacity is much lower than HiDDen's, so the result of such a comparison should be understood as unfair, please explain why. Besides, the embedding capacities of several other compared algorithms are not consistent, how are they compared?
+
+Discriminative networks have been used in image watermarking frameworks since HiDDen and have shown advantages in enhancing the invisibility of watermarking frameworks. The authors of this paper did not consider this module in the newly proposed framework, please explain the reason, is it because high invisibility can be achieved without discriminative networks, to reduce the parameters so it is not used or there is another reason, please explain.
+
+In response to the decomposition of the MSE loss function in the paper, we see the role of the different loss components, would like to ask if this decomposition is first proposed in this paper? Or is there already a readily available scheme in the field of knowledge distillation that performs a similar decomposition of the loss function, and this will affect the reassessment of the paper's innovativeness.
+
+\textbf{Rating: 8: accept, good paper}
+
+\end{reviewbox}
+
+
+\begin{reviewbox}{\href{https://openreview.net/forum?id=j7b4mm7Ec9}{Paper j7b4mm7Ec9 (Real Decision: Reject)}}{LightRed}{Empiricist}
+\scriptsize
+\paragraph{Summary of Contributions}
+\leavevmode\\[0.1em]
+The paper tackles the problem of building \textit{lightweight} deep learning-based image watermarking systems that retain high invisibility and robustness.  
+Its main contributions are:
+
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item \textbf{Analysis of the loss mismatch} – a decomposition of the commonly used MSE (and BCE) surrogate losses into \textit{deflation}, \textit{inflation} and \textit{regularization} components, arguing that only the deflation term directly serves the decoding objective.  
+    \item \textbf{Decoding-oriented surrogate loss (DO)} – a modified loss that retains the deflation term and restricts the inflation term to bits that lie within a “safe distance” $\varepsilon$ from the decision boundary.  
+    \item \textbf{Detachable projection head (PH)} – an auxiliary projection module added only during training to absorb the inflation/regularization directions; it is removed at inference time.  
+    \item \textbf{A five-module architectural framework} (image-preprocessing, message-preprocessing, feature-fusion, noised-image-preprocessing, message-extraction) that enables fine-grained ablations and module-wise pruning.  
+    \item \textbf{A lightweight encoder/decoder} built solely from transposed-convolution and convolution layers ($\approx$ 16 k parameters) that, when trained with DO or PH, achieves PSNR $\approx$ 41–42 dB and average decoding accuracy $\approx$ 99.3 \% on a suite of combined distortions, outperforming several larger SOTA models (HiDDeN, MBRS, CIN, FIN) while using only $\sim$ 2 \% of their parameters.
+\end{enumerate}
+
+\paragraph{Strengths}
+\leavevmode\\[0.1em]
+\begin{center}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{@{}p{0.2\textwidth}p{0.75\textwidth}@{}}
+\toprule
+\textbf{Aspect} & \textbf{Comments} \\ \midrule
+\textbf{Novelty of loss analysis} & The explicit decomposition of MSE into deflation/inflation/regularization and the identification of “irrelevant” optimization directions is insightful and not previously articulated in watermarking literature. \\
+\textbf{Method simplicity} & Both DO and PH are plug-and-play; they do not require architectural redesigns and can be applied to existing models. \\
+\textbf{Empirical performance} & The lightweight model trained with DO/PH reaches higher PSNR than the strongest baselines (FIN) and matches or exceeds their robustness on the combined-noise benchmark. \\
+\textbf{Comprehensive ablations} & The paper includes loss-component ablations, module-wise removals, PH block-number/channel-size studies, and hyper-parameter sweeps ($\varepsilon$, $\lambda$ weights). \\
+\textbf{Practical relevance} & Reducing parameter count and FLOPs by $>$ 95 \% is valuable for deployment on edge devices, a scenario explicitly motivated in the introduction. \\
+\textbf{Reproducibility cues} & Public codebases for baselines are used; training details (optimizer, learning rate, hardware) are listed; all additional metrics (SSIM, LPIPS, $l_2$, $l_\infty$) are reported. \\
+\bottomrule
+\end{tabular}
+}
+\end{center}
+
+\paragraph{Weaknesses}
+\leavevmode\\[0.1em]
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item \textbf{Statistical rigor} – All reported numbers are single-run averages; no confidence intervals, standard deviations, or significance tests are provided. Given the high accuracies ($\approx$ 99 \%), even small variances could alter the ranking against baselines.  
+    \item \textbf{Limited attack spectrum} – Robustness is evaluated on six synthetic distortions (combined noise) and two diffusion-based attacks that are approximated by a Gaussian-noise + median-filter pipeline. Real-world attacks (cropping, rotation, scaling, aggressive JPEG with varying QF, format conversion) are missing, and the geometric-distortion results show the lightweight model lagging behind MBRS.  
+    \item \textbf{Training overhead of PH} – While PH is removed at inference, its impact on training time, memory consumption, and energy is only qualitatively described (“inefficiency”) without quantitative measurement. This makes it hard to assess the overall cost-benefit.  
+    \item \textbf{Hyper-parameter sensitivity} – The safe distance $\varepsilon$ and the $\lambda$-weights strongly influence performance (Tables 18-19). The paper acknowledges manual tuning but does not provide a systematic tuning protocol or sensitivity analysis beyond a few discrete values.  
+    \item \textbf{Theoretical justification} – The decomposition proof is presented, but there is no formal guarantee that minimizing DO leads to a tighter bound on decoding error than standard MSE/BCE, nor any convergence analysis for the PH-augmented training.  
+    \item \textbf{Perceptual quality assessment} – PSNR, SSIM and LPIPS are reported, yet no user study or visual comparison beyond a single figure is provided; this limits confidence in the claim of “invisibility” for human observers.  
+    \item \textbf{Clarity and presentation} – The manuscript contains many typographical artefacts (e.g., stray line numbers, inconsistent notation) that hinder readability and reproducibility.  
+\end{enumerate}
+
+\paragraph{Questions for the Authors}
+\leavevmode\\[0.1em]
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item \textbf{Variability} – How much does the decoding accuracy vary across random seeds and different train/validation splits? Could you provide standard deviations for the main tables?  
+    \item \textbf{Training cost of PH} – What is the increase in GPU memory usage and wall-clock training time when PH is employed (e.g., for 4 projection blocks, 32 channels each)?  
+    \item \textbf{Effect of $\varepsilon$ on different distortions} – Table 19 shows the safe distance tuned for combined noise; does the same $\varepsilon$ transfer well to single-distortion or geometric-distortion settings?  
+    \item \textbf{Generalisation to other datasets} – Have you evaluated the model on datasets other than USC-SIPI (e.g., Kodak, DIV2K) to verify that the reported PSNR/accuracy are not dataset-specific?  
+    \item \textbf{Ablation on loss weighting} – How sensitive are results to the choice of $\lambda_{DO_1}$, $\lambda_{DO_2}$ (or $\lambda_{PH_1}$, $\lambda_{PH_2}$)? Is there a principled way to set them?  
+    \item \textbf{Comparison with recent lightweight baselines} – There are newer compact watermarking models (e.g., based on MobileNet or pruning techniques). How does your method compare to those?  
+\end{enumerate}
+
+\paragraph{Suggestions for Improvement}
+\leavevmode\\[0.1em]
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item \textbf{Statistical reporting} – Include at least three independent runs per configuration with mean ± std and perform paired statistical tests against baselines.  
+    \item \textbf{Broader robustness evaluation} – Add experiments with geometric transformations (rotation, scaling, cropping) and with a range of JPEG qualities. If possible, test against state-of-the-art watermark removal attacks (e.g., GAN-based erasers).  
+    \item \textbf{Training-efficiency analysis} – Quantify the additional GPU memory, FLOPs, and training time introduced by PH; possibly explore a lightweight PH (e.g., 1 block) to balance cost and gain.  
+    \item \textbf{Hyper-parameter tuning protocol} – Provide a systematic search (grid or Bayesian) for $\varepsilon$ and $\lambda$ values, and report the resulting sensitivity curves.  
+    \item \textbf{Theoretical bound} – Derive (or cite) a bound that relates the DO loss to the expected decoding error, clarifying why the reduction in inflation improves robustness.  
+    \item \textbf{Human perceptual study} – Conduct a small user study (e.g., MOS) to corroborate PSNR/SSIM findings on invisibility.  
+    \item \textbf{Manuscript polish} – Remove stray line numbers, ensure all equations are rendered, and unify notation (e.g., $L_{\text{deflation}}$ vs $L_\text{deflation}$).  
+\end{enumerate}
+
+\paragraph{Overall Verdict}
+\leavevmode\\[0.1em]
+The paper introduces a thoughtful analysis of loss mismatches in deep watermarking and proposes two practical techniques (DO and PH) that demonstrably improve a very compact model’s performance. The empirical results are promising and the ablation studies are thorough, but the lack of statistical validation, limited attack diversity, and missing analysis of training overhead reduce the confidence in the claimed superiority. With the suggested revisions, the work would be a solid contribution to the ICLR community.
+
+\paragraph{Final Recommendation}
+\leavevmode\\[0.1em]
+\textbf{Final Recommendation:} \textbf{Accept (Poster)} – the contribution is novel and empirically strong enough for inclusion, but further work is needed before it could be highlighted as an oral or spotlight paper.
+
+\end{reviewbox}
+
+\begin{reviewbox}{\href{https://openreview.net/forum?id=j7b4mm7Ec9}{Paper j7b4mm7Ec9 (Real Decision: Reject)}}{LightLimeGreen}{Theorist}
+\scriptsize
+\paragraph{Summary of Contributions}
+\leavevmode\\[0.1em]
+The manuscript studies deep learning-based image watermarking with an emphasis on lightweight models. Its main contributions are:
+
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item \textbf{Identification of a “loss-mismatch”} – the authors argue that commonly used surrogate losses (MSE, BCE) contain components (inflation, regularization) that do not directly serve the decoding objective and thus waste capacity in small models.
+    \item \textbf{Two training-time remedies} – 
+    \begin{enumerate}[leftmargin=1em, itemsep=0pt, topsep=0pt]
+        \item \textbf{Detachable Projection Head (PH)}: an auxiliary head added only during training to absorb the “irrelevant” optimisation directions; it is removed at inference.
+        \item \textbf{Decoding-Oriented surrogate loss (DO)}: a reformulated loss that keeps only the “deflation” term and introduces a “safe-distance” hyper-parameter to limit the influence of inflation.
+    \end{enumerate}
+    \item \textbf{A fine-grained five-module watermarking framework} (image-preprocess, message-preprocess, feature-fusion, noised-image-preprocess, message-extraction) that enables module-wise ablations and parameter reductions.
+    \item \textbf{A lightweight encoder-decoder architecture ($\approx$ 16 K parameters)} that, when trained with PH or DO, attains robustness and invisibility comparable to much larger SOTA models.
+    \item \textbf{Extensive empirical evaluation} on COCO/USC-SIPI, covering combined noise, diffusion-based attacks, geometric distortions, and knowledge-distillation baselines.
+\end{enumerate}
+
+\paragraph{Strengths}
+\leavevmode\\[0.1em]
+\begin{itemize}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item \textbf{Practical relevance} – Reducing model size while preserving watermark robustness is an important engineering problem for deployment on edge devices, diffusion-based generative models, and neural-radiance-field pipelines.
+    \item \textbf{Comprehensive experiments} – The authors evaluate many distortion types (six combined noises, diffusion attacks, geometric transforms) and report a wide range of metrics (PSNR, SSIM, LPIPS, accuracy). The ablation studies on individual modules and on the number of PH blocks/channels are thorough.
+    \item \textbf{Plug-and-play nature} – Both PH and DO are described as modular additions that can be applied to existing lightweight watermarking pipelines without architectural changes.
+    \item \textbf{Open-source spirit} – The paper mentions public code bases for baselines (HiDDeN, MBRS, CIN, FIN) and reports reproducibility details (datasets, optimizer, hardware).
+\end{itemize}
+
+\paragraph{Weaknesses}
+\leavevmode\\[0.1em]
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item \textbf{Theoretical novelty and rigor} – The decomposition of MSE/BCE into “deflation / inflation / regularisation” terms is essentially a re-parameterisation of the standard squared-error expansion; similar analyses exist in the learning-to-hash and metric-learning literature. The paper does not provide new theorems, nor does it prove that removing inflation/regularisation is \emph{necessary} for lightweight models beyond empirical observation. The proposed DO loss is a heuristic truncation of the full surrogate loss plus a manually tuned safety margin $\epsilon$. No justification is given for the specific form of the safe-distance term, nor is there any analysis of its effect on the loss landscape (e.g., gradient bias, convergence guarantees). The PH module resembles an auxiliary classifier head often used for stabilising training (e.g., in deep metric learning). The manuscript does not situate this design within that broader context, making the claimed novelty ambiguous.
+    \item \textbf{Empirical methodology concerns} –
+    \begin{itemize}[leftmargin=1em, itemsep=0pt, topsep=0pt]
+        \item \textbf{Hyper-parameter sensitivity}: Both PH ($\lambda$ values, number of blocks, channel width) and DO ($\epsilon$, $\lambda$-weights) require extensive manual tuning. The reported gains are strongly dependent on these settings, raising concerns about reproducibility and fairness.
+        \item \textbf{Statistical significance}: Results are presented as single mean values; confidence intervals or multiple random seeds are absent. Given the modest absolute differences (often $<$ 0.5 dB or $<$ 1 \% accuracy), it is unclear whether improvements are statistically robust.
+        \item \textbf{Baseline selection}: Comparisons exclude recent invertible or flow-based watermarking methods, which may impact the “state-of-the-art” claim.
+        \item \textbf{Training cost}: No quantitative measurement of training overhead is provided, though PH increases memory and computation.
+    \end{itemize}
+    \item \textbf{Presentation and clarity} – Numerous typographical errors, inconsistent notation, and low-quality figures hinder readability and verification.
+    \item \textbf{Ethical considerations} – While aligned with ethical standards, the lack of a dedicated “Broader Impact” section violates conference requirements.
+\end{enumerate}
+
+\paragraph{Questions for the Authors}
+\leavevmode\\[0.1em]
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item Can you provide a formal analysis (e.g., a bound) showing that removing the inflation and regularisation terms reduces the required capacity for a given decoding error?
+    \item How sensitive is the final performance to the choice of $\epsilon$ across different noise levels? Is there an automated way to set $\epsilon$ without exhaustive search?
+    \item What is the additional GPU memory consumption and wall-clock time for training with PH compared to the baseline MSE training?
+    \item Have you evaluated the variance of PSNR/accuracy over multiple random seeds? Could you report 95 \% confidence intervals for the key tables?
+    \item How do you envision the misuse of a highly robust lightweight watermark that could be embedded in malicious media (e.g., deepfakes)? Do you foresee any safeguards?
+\end{enumerate}
+
+\paragraph{Suggestions for Improvement}
+\leavevmode\\[0.1em]
+\begin{itemize}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item Strengthen the theoretical contribution by linking the loss decomposition to calibration theory or re-framing it as an empirical design study.
+    \item Automate hyper-parameter selection via validation-based scheduling for $\lambda$ and $\epsilon$.
+    \item Report standard deviations or confidence intervals and conduct statistical tests.
+    \item Include more recent baselines such as diffusion-based or invertible watermarking models.
+    \item Improve manuscript clarity: fix typos, include key equations in main text, and enhance figure quality.
+    \item Add a “Broader Impact” section discussing positive and negative societal implications.
+\end{itemize}
+
+\paragraph{Overall Verdict}
+\leavevmode\\[0.1em]
+The paper addresses an important problem and provides extensive experiments, but lacks theoretical rigor, shows marginal gains, and suffers from clarity issues. Therefore, it does not meet ICLR 2025 acceptance standards.
+\textbf{Final Recommendation: Reject}
+\end{reviewbox}
+
+\begin{reviewbox}{\href{https://openreview.net/forum?id=j7b4mm7Ec9}{Paper j7b4mm7Ec9 (Real Decision: Reject)}}{LightRed}{Pedagogical}
+\scriptsize
+\paragraph{Summary of Contributions}\leavevmode\\[0.1em]
+The paper tackles the problem of building \textit{lightweight} deep-learning based image watermarking systems that retain high invisibility and robustness. Its main ideas are:
+
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+\item \textbf{Identifying a loss-misalignment} – the commonly used MSE/BCE surrogate losses contain “inflation” and “regularisation” terms that do not directly contribute to decoding accuracy, leading to unnecessary parameter consumption in small models.
+\item \textbf{Two training-time remedies} –
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+    \item \textbf{Detachable Projection Head (PH)}: an auxiliary head is attached during training to absorb the irrelevant optimisation directions and is discarded at inference.
+    \item \textbf{Decoding-Oriented surrogate loss (DO)}: a reformulated loss that retains only the “deflation” term and limits the influence of inflation via a “safe distance” $\varepsilon$.
+\end{enumerate}
+\item \textbf{A five-module decomposition of the encoder/decoder} (image-preprocess, message-preprocess, feature-fusion, noised-image-preprocess, message-extraction) that enables fine-grained ablations and parameter pruning.
+\item \textbf{Extensive experiments} showing that a model with $\approx$ 0.02 M parameters ($\approx$ 2 \% of SOTA) can achieve comparable or superior PSNR and decoding accuracy when trained with PH or DO, and that the methods are plug-and-play for other lightweight designs.
+\end{enumerate}
+
+\paragraph{Strengths}\leavevmode\\[0.1em]
+\resizebox{\textwidth}{!}{
+\begin{tabular}{p{3cm}p{12cm}}
+\toprule
+\textbf{Aspect} & \textbf{Comments} \\
+\midrule
+\textbf{Technical relevance} & The problem of efficient watermarking is important for many downstream applications (e.g., diffusion models, NeRF). The identification of loss-misalignment is a useful observation that could inspire further work. \\
+\textbf{Empirical breadth} & The authors evaluate on a wide range of distortions (combined noise, diffusion-based attacks, geometric transforms) and compare against several recent SOTA watermarking models. \\
+\textbf{Modular framework} & The five-module decomposition is clearly motivated and the ablation tables (e.g., Table 7) illustrate its practical utility. \\
+\textbf{Plug-and-play claims} & PH and DO are presented as methods that can be added to existing lightweight backbones without architectural changes – a potentially valuable engineering contribution. \\
+\bottomrule
+\end{tabular}}
+
+\paragraph{Weaknesses}\leavevmode\\[0.1em]
+\resizebox{\textwidth}{!}{
+\begin{tabular}{p{3cm}p{12cm}}
+\toprule
+\textbf{Category} & \textbf{Issues} \\
+\midrule
+\textbf{Clarity \& Intuition} & • The core ideas (deflation vs. inflation) are explained only after a dense algebraic derivation that is largely hidden behind “Appendix A”. \\
+& • The safe-distance $\varepsilon$ is introduced abruptly, without a visual illustration of its effect on the loss landscape. \\[0.3em]
+\textbf{Narrative Flow} & • The paper jumps between high-level motivation, low-level algebra, and experimental details without smooth transitions. \\
+& • Section headings are all-caps and do not follow typical ICLR style. \\
+& • “Related Works” mixes historical and modern papers without a clear taxonomy. \\[0.3em]
+\textbf{Presentation} & • Numerous line-numbers appear in text. \\ 
+& • Tables are inconsistently formatted. \\ 
+& • Figures are referenced but missing. \\ 
+& • Many typographical errors reduce professionalism. \\[0.3em]
+\textbf{Accessibility} & • A newcomer would struggle to understand “deflation”, “inflation”, and “regularisation” without diagrams. \\
+& • Prior works are not clearly compared. \\
+& • Hyper-parameter tuning lacks guidance in main text. \\[0.3em]
+\textbf{Reproducibility} & • No source-code link. \\
+& • Training details are scattered and incomplete. \\[0.3em]
+\textbf{Overall readability} & The manuscript reads like a collection of logs; the abundance of numbers without interpretation hampers comprehension. \\
+\bottomrule
+\end{tabular}}
+
+
+\paragraph{Questions for the Authors}\leavevmode\\[0.1em]
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+% \item Missing equations – Could you provide explicit forms of “deflation”, “inflation”, and “regularisation” components (Eq. 3 and Eq. 4)?
+\item Safe distance $\varepsilon$ – How is $\varepsilon$ chosen in practice? Would a validation curve help?
+\item Projection head architecture – Please include a clear diagram of the projection block.
+\item Training overhead – Quantify additional GPU memory and time for PH training.
+\item Generalisation – Have PH/DO been tested on larger backbones (e.g., ResNet)?
+\item Code release – Will the implementation be released for reproducibility?
+\end{enumerate}
+
+\paragraph{Suggestions for Improvement}\leavevmode\\[0.1em]
+\begin{enumerate}[leftmargin=0.5em, itemsep=0pt, topsep=0pt]
+\item Rewrite the core methodological section with diagrams and intuitive explanation.
+\item Remove extraction artefacts and follow ICLR template.
+\item Provide complete figures and well-formatted tables.
+\item Add a concise “Practical Guide” with recommended values for $\varepsilon$, $\lambda_{PH}$, $\lambda_{DO}$.
+\item Improve reproducibility by including implementation details and code link.
+\item Strengthen related-work organisation into clear categories.
+\item Thorough proofreading for grammar and typography.
+\end{enumerate}
+
+\paragraph{Overall Recommendation}\leavevmode\\[0.1em]
+The paper addresses an interesting niche (lightweight watermarking) and proposes novel loss-based ideas that yield strong results. However, communication quality is currently below ICLR standards—absent figures, fragmented narrative, and formatting artefacts make evaluation difficult. I recommend \textbf{rejection} and suggest substantial revision.
+\textbf{Final Recommendation: Reject}
+\end{reviewbox}
+
+\section{Implementation Details}
+\label{app:implementation}
+The system is implemented in Python with asynchronous orchestration and semaphores to control parallelism. All agents persist their outputs in a standardized directory layout, enabling caching, reproducibility, and downstream analysis. We use \texttt{gpt-oss-120b} as the primary large language model for all roles, served on 8xH100 GPUs with \texttt{vllm}. Reviewer prompts combine a base rubric with persona-specific instructions and the official reviewer guidelines from the ICLR website (including the code of ethics).~\footnote{https://iclr.cc/Conferences/2025/ReviewerGuide} No fine-tuning is performed; all agents operate in instruction-following mode.
+% We attach our code in the supplementary material.
+
+For training the XGBoost classifiers, we perform 5-fold cross validation and report the mean results across the 5 folds in Table~\ref{tab:main_results}.
+For XGBoost, we use 200 estimaters, a max depth of 6, learning rate of 0.1, and for the Bert classifier, we finetune it for 20 epochs, use a learning rate of 2e-5, a batch size of 16. We use an 70-15-15 training-validation-test split and perform hyperparameter tuning on the validation set to test between learning rates \{1e-5, 2e-5, 3e-5\} and number of epochs in \{3, 5, 10, 20, 30, 50\}.
+
+\begin{table}[t]
+\centering
+\small
+\renewcommand{\arraystretch}{1.1}
+\rowcolors{2}{gray!7}{white} % alternating row colors
+\begin{tabularx}{\linewidth}{l L}
+\toprule
+\textbf{Agent} & \textbf{Responsibilities} \\
+\midrule
+\textbf{LitLLM} &
+\begin{itemize}
+    \item Retrieve and rank relevant papers
+    \item Summarize top-$k$ works into concise review
+    \item Provide grounding for reviewer, author, and metareviewer
+\end{itemize} \\
+\textbf{Reviewer} &
+\begin{itemize}
+    \item Paper summary
+    \item Explicit strengths and weaknesses
+    \item Checks: novelty, soundness, experiments, results/discussion
+    \item Organization/presentation and impact
+    \item Grounds judgments in manuscript or literature
+    \item Categorical recommendation (Oral, Spotlight, Poster, Reject, Desk Reject)
+\end{itemize} \\
+\textbf{Author} &
+\begin{itemize}
+    \item Synthesizes rebuttal from reviews and literature
+    \item Addresses criticisms, clarifies misunderstandings
+    \item Proposes revisions (e.g., code release, ablations)
+    \item Explicitly cites reviewer claims or literature
+\end{itemize} \\
+\textbf{Metareviewer} &
+\begin{itemize}
+    \item Summarizes reviewer stances and scores (pre-rebuttal)
+    \item Identifies shared strengths and weaknesses
+    \item Evaluates rebuttal effectiveness
+    \item Tracks stance shifts post-rebuttal
+    \item Highlights lingering concerns or disagreements
+    \item Fact-checks reviewer claims; assigns significance scores
+    \item Categorical recommendation
+\end{itemize} \\
+\bottomrule
+\end{tabularx}
+\caption{Overview of agents in the \textsc{ReviewerToo} pipeline and their responsibilities.}
+\label{tab:agents}
+\end{table}
+
+\begin{table}[t]
+\centering
+\small
+\renewcommand{\arraystretch}{1.1}
+\rowcolors{2}{gray!10}{white}
+\begin{tabularx}{\linewidth}{l X}
+\toprule
+\textbf{Reviewer persona} & \textbf{Style and primary focus} \\
+\midrule
+\textbf{default} & Balanced, rubric-following reviewer aligned with ICLR 2025 guidance; covers soundness, novelty, impact, clarity without strong bias. \\
+\textbf{critical} & Skeptical, flaw-finding stance; stress-tests novelty claims, methodology rigor, and baselines. \\
+\textbf{permissive} & Supportive lens; highlights 
+strengths and potential, assumes good faith, emphasizes positive interpretations of results. \\
+\midrule
+\textbf{empiricist} & Evidence-first; scrutinizes datasets, baselines, metrics, statistical validity, and whether results support claims. \\
+\textbf{pragmatist} & Real-world utility; feasibility, scalability, deployment cost, practitioner relevance, and adoption barriers. \\
+\textbf{theorist} & Conceptual rigor; coherence and elegance of core ideas, logical soundness, evidence-theory alignment. \\
+\midrule
+\textbf{pedagogical} & Communication quality; clarity, intuition, narrative flow, figure/table interpretability, accessibility to newcomers. \\
+\textbf{big\_picture} & Vision-first; long-term significance, paradigm-shift potential, conceptual promise over implementation details. \\
+\textbf{reproducibility} & Replication rigor; missing hyperparameters, data splits, seeds, envs; checklist compliance and ambiguity removal. \\
+\midrule
+\textbf{impact} & Foundations and representations; depth, interpretability, principles that advance long-term AI understanding. \\
+\textbf{visionary} & Bold paradigm shifts and learning dynamics; speculative but plausible mechanisms and broader implications. \\
+\textbf{fairness} & Practical elegance and scalability; efficient, implementable methods with robust large-scale validation. \\
+\textbf{probabilistic} & Probabilistic rigor and generative modeling; uncertainty handling, principled inference, socially meaningful applications. \\
+\midrule
+\textbf{metareviewer} & Synthesis and calibration; aggregates reviewers, evaluates rebuttal effectiveness, extracts/verifies facts, assigns significance, and produces AC-facing briefings and recommendations. \\
+\textbf{majority} & A metareviewing baseline taking majority vote of all the \textit{reviewer} agents. \\
+\bottomrule
+\end{tabularx}
+\caption{Reviewer and metareviewer personas used in ReviewerToo and their primary emphases.}
+\label{tab:reviewer_personas}
+\end{table}
+\end{document}
