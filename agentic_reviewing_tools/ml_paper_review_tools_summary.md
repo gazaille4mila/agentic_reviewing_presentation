@@ -1,6 +1,6 @@
 # ML Paper Review Tools Summary
 
-This summary lists tools you can use right now in the ML pre-submission workflow, focused on review, readiness, compliance, and literature support.
+This summary lists tools that automatically review or assess manuscripts (review-style feedback, readiness diagnostics, or compliance/risk checks).
 
 ## 1) PaperReview.ai
 - Tool name: PaperReview.ai (Stanford Agentic Reviewer)
@@ -133,58 +133,7 @@ This summary lists tools you can use right now in the ML pre-submission workflow
   - Guarantee verdict: Strong within PAT pilot scope.
   - Evidence: https://blog.neurips.cc/2026/04/21/neurips-supports-authors-with-googles-paper-assistant-tool-pat/ , https://blog.icml.cc/2026/01/14/icml-experimental-program-using-googles-paper-assistant-tool-pat/
 
-## 8) Bibby AI
-- Tool name: Bibby AI
-- Pros:
-  - AI-native LaTeX workspace with context-aware editing support.
-  - Built-in paper review, citation search, equation/table generation.
-  - Strong reported LaTeX error detection/fix performance in source benchmarks.
-- Cons:
-  - Primarily a writing environment; review quality varies by manuscript type.
-  - Some benchmark claims come from product-adjacent sources.
-- Pricing:
-  - Freemium
-  - Pro reported around $8-$20/month (academic discount dependent)
-- URL: https://trybibby.com/
-- IP handling:
-  - Rights retained by author: Data-security page says users keep 100% ownership/IP and Bibby claims no rights to content.
-  - Non-use of manuscript content: Page states no training on user data, zero-retention provider agreements, and deletion controls.
-  - Guarantee verdict: Strong (based on published security commitments).
-  - Evidence: https://trybibby.com/data-security
-
-## 9) OpenAI Prism
-- Tool name: OpenAI Prism
-- Pros:
-  - Integrated LaTeX + live preview + inline AI refinement.
-  - Good for polishing existing technical manuscripts.
-- Cons:
-  - Less specialized than Bibby for some LaTeX-fix workflows.
-  - Limited evidence of full end-to-end reviewer-style diagnostics.
-- Pricing: Approximately $12/month (as cited in source)
-- URL: (Referenced review source) https://www.thesisai.io/blog/openai-prism-ai-latex-editor-review/
-- IP handling:
-  - Rights retained by author: Under OpenAI terms, users retain ownership of input and own output (as between user and OpenAI).
-  - Non-use of manuscript content: For individual services, OpenAI may use content to improve services/models unless the user opts out; for business/API products default is no training unless opt-in.
-  - Guarantee verdict: Conditional/partial (depends on account type and settings; no universal non-use guarantee).
-  - Evidence: https://openai.com/policies/terms-of-use , https://openai.com/policies/how-your-data-is-used-to-improve-model-performance
-
-## 10) Overleaf AI Features (Writefull/TeXGPT ecosystem)
-- Tool name: Overleaf AI Integration
-- Pros:
-  - Familiar LaTeX platform with strong collaboration and template ecosystem.
-  - AI support for language feedback and basic generation tasks.
-- Cons:
-  - AI capabilities are less agentic/deep than specialized review tools.
-  - More writing-assist oriented than scientific-critique oriented.
-- Pricing: Overleaf subscription/institutional plans (AI feature pricing not clearly separated in source)
-- URL: https://www.overleaf.com/about/ai-features
-- IP handling:
-  - Rights retained by author: Overleaf terms state they do not claim ownership of your content; for AI tools, inputs/outputs are treated as your stuff and you retain ownership.
-  - Non-use of manuscript content: Overleaf AI pages/terms state no training on your project data for model development without consent and require third-party providers not to use your content for their own model training.
-  - Guarantee verdict: Strong for AI-training non-use; standard service-operation/retention clauses still apply.
-  - Evidence: https://www.overleaf.com/legal , https://www.overleaf.com/about/ai-features
-
-## 11) SciScore
+## 8) SciScore
 - Tool name: SciScore
 - Pros:
   - Strong compliance/method reporting checks (RRIDs, ethics/statistics signals).
@@ -200,7 +149,7 @@ This summary lists tools you can use right now in the ML pre-submission workflow
   - Guarantee verdict: Unknown/partial.
   - Evidence: https://www.scicrunch.com/privacy-statement
 
-## 12) Paperpal Preflight
+## 9) Paperpal Preflight
 - Tool name: Paperpal Preflight
 - Pros:
   - Fast pre-submission format/metadata/reference checks.
@@ -216,103 +165,6 @@ This summary lists tools you can use right now in the ML pre-submission workflow
   - Guarantee verdict: Partial to strong (very clear non-training claim; ownership clause should be verified directly in full FAQ/terms).
   - Evidence: https://paperpal.com/ , https://paperpal.com/preflight-for-authors
 
-## 13) Anonymous GitHub (anonymous.4open.science)
-- Tool name: Anonymous GitHub
-- Pros:
-  - Preserves double-blind anonymity while sharing code.
-  - Redacts identifying metadata and gives stable anonymous links.
-  - Critical for conference policy compliance when code is required.
-- Cons:
-  - Not a paper quality reviewer by itself.
-  - Requires careful repo hygiene to avoid leakage in non-text artifacts.
-- Pricing: Free (open-source tool, per source framing)
-- URL: https://anonymous.4open.science/
-- IP handling:
-  - Rights retained by author: Tool mirrors existing GitHub repositories for anonymized sharing; no transfer of authorship rights is indicated in the public pages checked.
-  - Non-use of manuscript content: Manual FAQ expansion states repository data is not shared or used beyond anonymization service operation; when repositories are removed/expired, configuration metadata is retained to allow restoration and avoid ID reuse.
-  - Guarantee verdict: Partial (clear service-scope non-sharing statement, but metadata/config retention means not a strict no-use/no-retention guarantee).
-  - Evidence: https://anonymous.4open.science/ , https://anonymous.4open.science/faq
-
-## 14) Elicit
-- Tool name: Elicit
-- Pros:
-  - Useful for literature synthesis and evidence extraction.
-  - Helps compare methods/datasets/findings across papers quickly.
-- Cons:
-  - Not a full pre-submission peer-review simulator.
-  - Best as literature-support tool, not final acceptance-readiness check.
-- Pricing: Not specified in source text
-- URL: https://elicit.com/
-- IP handling:
-  - Rights retained by author: Terms say you retain rights/title in your content.
-  - Non-use of manuscript content: Terms grant Elicit a broad perpetual license to use/modify content for service provision and allow retention/use of aggregated behavioral/telemetry data to improve and market services.
-  - Guarantee verdict: No (not a strict non-use model).
-  - Evidence: https://elicit.com/operations/terms
-
-## 15) Semantic Scholar
-- Tool name: Semantic Scholar
-- Pros:
-  - Large-scale scholarly search with ML-assisted relevance and summaries.
-  - Helps validate related-work coverage and citation quality.
-- Cons:
-  - Discovery tool, not a direct manuscript reviewer.
-  - Requires manual interpretation for paper-specific critique.
-- Pricing: Free (core use)
-- URL: https://www.semanticscholar.org/
-- IP handling:
-  - Rights retained by author: Ai2 terms say users own inputs and (where applicable) outputs.
-  - Non-use of manuscript content: Ai2 terms also grant a broad license and reserve the right to train models on user content unless a specific service says otherwise.
-  - Guarantee verdict: No (no universal non-use guarantee at the platform-terms level).
-  - Evidence: https://allenai.org/terms.html
-
-## 16) Connected Papers
-- Tool name: Connected Papers
-- Pros:
-  - Visual citation graph exploration for related work mapping.
-  - Helps uncover foundational and derivative papers.
-- Cons:
-  - Not a manuscript quality/reproducibility auditor.
-  - Limited direct guidance on ML experiment design quality.
-- Pricing: Not specified in source text
-- URL: https://www.connectedpapers.com/
-- IP handling:
-  - Rights retained by author: No explicit manuscript-IP ownership protections identified in connectedpapers terms/privacy.
-  - Non-use of manuscript content: Policies describe collection of account/search/saved-paper data and sharing with third-party providers for operations; no explicit no-training/no-reuse guarantee.
-  - Guarantee verdict: No/unknown for strict manuscript non-use.
-  - Evidence: https://www.connectedpapers.com/privacy , https://www.connectedpapers.com/terms
-
-## 17) Research Rabbit
-- Tool name: Research Rabbit
-- Pros:
-  - Graph-based discovery and tracking of literature trajectories.
-  - Useful for keeping related work current over drafting iterations.
-- Cons:
-  - Not a direct pre-submission reviewer.
-  - Requires manual synthesis of insights into manuscript edits.
-- Pricing: Not specified in source text
-- URL: https://www.researchrabbit.ai/
-- IP handling:
-  - Rights retained by author: Terms/privacy are now extractable (served under Litmap Limited legal text), but no strong manuscript-IP ownership guarantee analogous to dedicated manuscript-review tools was identified.
-  - Non-use of manuscript content: Policies describe sharing with AI service providers (including OpenAI/Databricks), vendors/affiliates, and analytics use; no explicit blanket "never used to train" manuscript guarantee was found.
-  - Guarantee verdict: Partial (policies are available and specific, but no strict non-use guarantee for uploaded content).
-  - Evidence: https://www.researchrabbit.ai/privacy-policy , https://www.researchrabbit.ai/terms-of-service
-
-## 18) Scholarcy
-- Tool name: Scholarcy
-- Pros:
-  - Rapid PDF summarization for literature screening.
-  - Good for triaging large reading lists before writing related work.
-- Cons:
-  - Not a reviewer-style technical audit tool.
-  - Summary quality depends on source document structure.
-- Pricing: Not specified in source text
-- URL: https://www.scholarcy.com/
-- IP handling:
-  - Rights retained by author: Terms state users remain owners of verbatim content; provider owns Scholarcy/Everway results.
-  - Non-use of manuscript content: Terms state they do not sell personal data or processed documents and include confidentiality commitments; no explicit blanket "never used in any way" model-training prohibition found.
-  - Guarantee verdict: Partial (ownership and confidentiality are clear, but strict no-use/no-training guarantee is not explicit in the extracted terms text).
-  - Evidence: https://www.scholarcy.com/terms-of-service
-
 ---
 
 ## Practical shortlist for your upcoming ML review
@@ -321,4 +173,4 @@ If your goal is pre-submission paper quality improvement (not just literature se
 2. Reviewer3 (mid-draft structure/method checks)
 3. Refine.ink (theory/proof-heavy audits)
 4. Manusights (final readiness, citations, figures, desk-reject risk)
-5. Anonymous GitHub (double-blind code sharing compliance)
+5. q.e.d Science (deep claim/evidence critique)
