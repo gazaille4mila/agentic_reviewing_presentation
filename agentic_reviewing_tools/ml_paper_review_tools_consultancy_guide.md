@@ -1,4 +1,4 @@
-# Automatic Paper Review Tools
+# Tools for the automatic review of technical documents
 
 This guide aims to help AMLRT researchers and project managers to select AI-powered review tools for project reports and scientific manuscripts, where intellectual property sensitivity varies from public-facing drafts to highly sensitive proprietary work.
 
@@ -16,16 +16,17 @@ This guide aims to help AMLRT researchers and project managers to select AI-powe
 - **Default Training?:** Whether the vendor's legal terms allow use of uploaded content to train AI models by default.
 - **Retention Posture:** What the vendor states about how long uploaded content is stored before deletion.
 - **Evidence Strength:** Quality of the evidence supporting the tool's privacy posture: ⭐⭐⭐ direct legal terms and security documentation; ⭐⭐ public claims or partial terms; ⭐ marketing copy or incomplete documentation only.
-- **Fit for confidential work?:** Whether the tool is *Potentially* suitable for confidential manuscripts (pending PM/legal/IT approval) or *No* (do not use for confidential work).
+- **Fit for confidential work?:** Confidential-use status for this guide: *Yes* = already approved for confidential use; *Potentially* = may be usable only after PM/legal/IT confirmation; *No* = not approved for confidential material.
 
 
 
 | Tool | URL | Best Use Case | Pricing | Default Training? | Retention Posture | Evidence Strength | Fit for confidential work? |
 |------|-----|---------------|---------|-------------------|-------------------|------------------|----------------------------|
-| **Manusights** | https://manusights.com/ | End-stage journal-fit scoring, citation verification, figure consistency | Free scan; $29 AI diagnostic; $1,000-$1,800 human review | No | Zero-retention, immediate deletion | ⭐⭐⭐ Direct terms + security pages | **Potentially** |
-| **Refine.ink** | https://www.refine.ink/ | Theory-heavy papers, mathematical proof auditing, internal consistency | $49.99 one-time; $39.99/review (3-pack); $29.99/review (10-pack) | No | Zero-retention on confidential uploads | ⭐⭐⭐ Terms + privacy pages | **Potentially** |
-| **Paperpal Preflight** | https://paperpal.com/preflight-for-authors | Format compliance, metadata checks, desk-rejection firewall | Request demo/contact sales; no public numeric pricing found | No (for chatbot data; preflight scope needs confirmation) | Zero-retention/immediate deletion claimed on product pages | ⭐⭐ Public claims + Cactus ToU for chatbot | **Potentially** |
-| **q.e.d Science** | https://www.qedscience.com/ | Claim decomposition, co-author alignment on claim strength | Free (with institutional email) | Yes (explicit training rights) | Non-revocable license to use for model improvement | ⭐⭐ Direct ToS | **No** |
+| **Gemini (incl. Deep Search)** | https://gemini.google.com/app | Primary confidential-review workflow: deep literature/context search + manuscript critique | Mila-provided | No | Vetted by Mila legal/IT for team confidential use | ⭐⭐⭐ Internal organizational approval + controlled deployment | **Yes** |
+| **Manusights** | https://manusights.com/ | End-stage journal-fit scoring, citation verification, figure consistency | Free scan; $29 AI diagnostic | No | Zero-retention, immediate deletion | ⭐⭐⭐ Direct terms + security pages | **Potentially** |
+| **Refine.ink** | https://www.refine.ink/ | Theory-heavy papers, mathematical proof auditing, internal consistency | $49.99 one-time; $39.99/review (3-pack); $29.99/review (10-pack) | No | No-training commitment on confidential uploads; user-controlled deletion | ⭐⭐⭐ Terms + privacy pages | **Potentially** |
+| **Paperpal Preflight** | https://paperpal.com/preflight-for-authors | Format compliance, metadata checks, desk-rejection firewall | Request demo/contact sales; no public numeric pricing found | Ambiguous: chatbot has no-training clause, but general ToU includes broad source-file improvement rights | Retention unclear in service-specific legal text; deletion/non-training emphasized on product/security pages | ⭐⭐ Mixed signals across product pages and ToU | **No** |
+| **q.e.d Science** | https://www.qedscience.com/ | Claim decomposition, co-author alignment on claim strength | Free (with institutional email) | Yes | Non-revocable license to use for model improvement | ⭐⭐ Direct ToS | **No** |
 | **Reviewer3** | https://reviewer3.com/ | Methodology triage, reproducibility checks, fabricated reference detection | Free first review; $19 one-time or $29/month | Yes (opt-out model) | Zero-retention claimed, but training is default | ⭐⭐ Security page contradicts ToS | **No** |
 | **ScholarsReview** | https://scholarsreview.com/ | All-in-one platform (review, grammar, journal finding) | From $4.99; $14.99/4 docs; $45/month; fixes plans up to $90/month | No (claimed) | Auto-deletion claimed, terms not fully accessible | ⭐⭐ Privacy claim, but terms hard to find | **No** |
 | **SciScore** | https://sciscore.com/ | Compliance/reporting checks (RRIDs, ethics, statistics signals) | 1 report free via ORCID signup; additional reports via AsedaSciences (no public numeric pricing) | Unknown | Unknown | ⭐ Privacy statement vague | **No** |
@@ -37,6 +38,29 @@ This guide aims to help AMLRT researchers and project managers to select AI-powe
 ## Detailed Tool Assessments
 
 ### Potentially Fit for Confidential Work
+
+#### Gemini (incl. Deep Search)
+**Best for:** Default confidential workflow at Mila; deep search, synthesis, and manuscript feedback within organization-approved controls
+
+**Strengths:**
+- Explicitly provided by Mila to the team for day-to-day use
+- Already vetted by Mila legal and IT teams for confidential use
+- Deep Search supports broad literature/context discovery and rapid evidence gathering
+- Single default environment reduces tool fragmentation and policy drift
+
+**Limitations:**
+- Not purpose-built for peer review: strong general reasoning, but no native conference/journal review rubric, checklist scoring, or standardized reviewer workflow.
+- Verification still required: Deep Search can surface useful evidence quickly, but citation quality/provenance can be uneven, so critical claims must be manually validated.
+- Literature coverage is not complete: may miss paywalled papers, supplementary materials, or niche sources not fully indexed/searchable.
+
+**Pricing:** Mila-provided
+
+**IP Guarantee:** Strong ✅
+- Approved by Mila legal and IT for confidential team workflows
+- Should be treated as the primary/default option for confidential manuscripts in this guide
+- Evidence: https://gemini.google.com/app
+
+---
 
 #### Manusights
 **Best for:** Final-stage submission readiness, journal-fit prediction, citation accuracy verification
@@ -90,6 +114,8 @@ This guide aims to help AMLRT researchers and project managers to select AI-powe
 
 ---
 
+### Public Work Only (or Contract Override Required)
+
 #### Paperpal Preflight
 **Best for:** Format compliance, metadata completeness, reference structure checks
 
@@ -108,13 +134,12 @@ This guide aims to help AMLRT researchers and project managers to select AI-powe
 **IP Guarantee:** Partial ⚠️
 - Clear non-training claim on public pages
 - Cactus ToU includes explicit AI chatbot language: users retain ownership of chatbot input, and data is not used to train the chatbot model/platform
-- Scope caveat: the strongest legal clause is explicitly tied to chatbot usage; confirm contractual coverage for Paperpal Preflight manuscript uploads before confidential use
-- **Recommendation:** Potentially fit for confidential work, with PM/legal sign-off before confidential uploads
-- Evidence: https://paperpal.com/, https://paperpal.com/preflight-for-authors, https://cactusglobal.com/terms-of-use
+- Cactus ToU also includes a general clause allowing use of uploaded source files to analyze, enhance, or develop services, tools, and systems, which creates legal ambiguity for manuscript uploads unless contractually narrowed
+- Scope caveat: the strongest explicit no-training legal clause is tied to chatbot usage; confirm contractual coverage for Paperpal Preflight manuscript uploads before confidential use
+- **Recommendation:** **No by default** for confidential work. Upgrade to potentially acceptable only after PM/legal confirms contract terms that explicitly narrow or override the broad source-file improvement clause for Preflight manuscript uploads.
+- Evidence: https://paperpal.com/, https://paperpal.com/preflight-for-authors, https://paperpal.com/data-security, https://cactusglobal.com/terms-of-use
 
 ---
-
-### Public Work Only
 
 #### q.e.d Science
 **Best for:** Claim decomposition, co-author alignment on claim strength (public work only)
@@ -146,17 +171,14 @@ This guide aims to help AMLRT researchers and project managers to select AI-powe
 #### Reviewer3
 **Best for:** Methodology triage, reproducibility checks, fabricated reference detection (public work only)
 
-**Why avoid:**
-- **Legal/marketing contradiction:** Security page claims "never used for training," but Terms of Service explicitly allow AI training on User Content by default
-- **Opt-out model:** Training occurs unless user emails support@reviewer3.com to opt out
-- **Risk:** Default assumption is that all uploads are usable for model improvement
-
 **Strengths (ignoring IP issue):**
 - Rapid structural triage (under 10 minutes)
 - 97.7% fabricated-reference detection accuracy
 - PDF-anchored feedback for targeted revision
 
 **Limitations:**
+- Legal/marketing contradiction between public security messaging and Terms of Service on training rights
+- Opt-out training model (training applies by default unless users email support@reviewer3.com)
 - Lacks journal-specific targeting
 - No live novelty assessment
 - Limited figure-vision analysis
@@ -177,7 +199,7 @@ This guide aims to help AMLRT researchers and project managers to select AI-powe
 **Best for:** Broad all-in-one workflow (review, grammar, journal finding, literature help)
 
 **Strengths:**
-- All-in-one platform for early-career researchers
+- All-in-one platform
 - Useful for many simultaneous workflow needs
 - Claims auto-deletion of uploaded files after processing
 
@@ -213,17 +235,12 @@ This guide aims to help AMLRT researchers and project managers to select AI-powe
 - No clear manuscript-IP ownership clause in accessible SciCrunch documentation
 - Privacy statement does not explicitly guarantee AI-model non-use for manuscript content
 - **Recommendation:** Public work only unless vendor terms are clarified for confidential use
-- Evidence: https://www.scicrunch.com/sciscorereport-faq, https://www.scicrunch.com/privacy-statement
+- Evidence: https://www.sciscore.com/, https://www.scicrunch.com/sciscorereport-faq, https://www.scicrunch.com/privacy-statement
 
 ---
 
 #### PaperReview.ai
-**Best for:** Early triage for CS/ML conference papers (public work only)
-
-**Why unclear:**
-- No published terms of service or privacy policy on main site
-- No public data handling documentation
-- Cannot confirm ownership protection or non-training guarantee
+**Best for:** Early triage for CS/ML conference papers
 
 **Strengths:**
 - Free, fast, arXiv-grounded feedback for CS/ML papers
@@ -231,6 +248,9 @@ This guide aims to help AMLRT researchers and project managers to select AI-powe
 - Useful for early triage before co-author circulation
 
 **Limitations:**
+- No published terms of service or privacy policy on main site
+- No public data handling documentation
+- Cannot confirm ownership protection or non-training guarantee
 - 15-page, 10 MB file size limits
 - Best in CS/ML; weak outside arXiv-heavy domains
 - English-only support
@@ -248,6 +268,6 @@ This guide aims to help AMLRT researchers and project managers to select AI-powe
 
 ## Conference-Endorsed Tools
 
-Major ML conferences are beginning to offer official pre-submission author feedback tools. [ICML 2026](https://blog.icml.cc/2026/01/14/icml-experimental-program-using-googles-paper-assistant-tool-pat/) and [NeurIPS 2026](https://blog.neurips.cc/2026/04/21/neurips-supports-authors-with-googles-paper-assistant-tool-pat/), for example, both ran optional programs using Google's Paper Assistant Tool (PAT), giving authors automated feedback before submission with explicit stateless inference and scheduled deletion guarantees. These conference-hosted programs tend to carry stronger IP protections than self-serve vendor tools, since data handling is governed directly by the conference and program organizers rather than a commercial third party.
+Major ML conferences are beginning to offer official pre-submission author feedback tools. [ICML 2026](https://blog.icml.cc/2026/01/14/icml-experimental-program-using-googles-paper-assistant-tool-pat/) and [NeurIPS 2026](https://blog.neurips.cc/2026/04/21/neurips-supports-authors-with-googles-paper-assistant-tool-pat/), for example, both ran optional programs using Google's Paper Assistant Tool (PAT), giving authors automated feedback before submission with explicit stateless inference and scheduled deletion guarantees.
 
 Researchers should keep an eye on submission guidelines for future mainstream ML conferences (ICML, NeurIPS, ICLR, EMNLP, CVPR, etc.) for similar offerings. Availability is tied to specific submission windows and is not guaranteed to continue across cycles — verify at the time of submission.
