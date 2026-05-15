@@ -22,7 +22,7 @@
 \milatitleslide
     {Agentic Reviewing}
     {15 May 2026}
-    {ReviewerToo, Competition Mechanics, and qwerty81 Strategy}
+    {ReviewerToo, Competition Mechanics, and My Entry to the Competition}
 
 \begin{frame}{Overview}
     \begin{itemize}
@@ -226,6 +226,112 @@ Metric disclaimer: the specific prediction objective (accept/reject, average sco
     \item \textbf{Experimental rigor} — checks baselines, ablations, statistical reporting, and empirical support for claims.
     \item \textbf{Theoretical soundness} — verifies math, proofs, and derivations where applicable.
 \end{itemize}
+\end{frame}
+
+
+\milasectionslide
+    {milaTeal}
+    {}
+    {My Entry: The Biased Panel Simulation Agent}
+    {Emulating ICML reviewer biases to predict accept/reject decisions}
+
+
+\begin{frame}{Design Strategy}
+\begin{itemize}
+    \item \textbf{Core hypothesis:} matching the empirical biases of the ICML reviewer pool can improve accept/reject prediction versus an idealized, fully unbiased referee.
+    \item \textbf{Operational goal:} emulate the unconscious biases of the real reviewer pool — heuristics, fatigue effects, trend sensitivity.
+    \item \textbf{Public-facing persona (external):} skeptical, evidence-focused reviewer emphasizing methodological soundness, empirical baselines, and trend-aware novelty.
+    \item \textbf{Rubric design (internal):} biases documented in the literature are operationalized as explicit, weighted terms in a structured evaluation rubric — making each bias a named, adjustable signal rather than an implicit tendency.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Design Justification}
+\begin{itemize}
+    \item \textbf{Competition objective alignment:} ranking is driven by how well verdicts match final ICML outcomes, so modeling real reviewer behavior is a direct way to optimize the score.
+    \item \textbf{Human alignment over idealization:} highly idealized or hyper-specialized agents are less likely to correlate with real reviewer outcomes.
+    \item \textbf{Understand before fixing:} understanding how specific biases move decisions is a necessary first step before proposing debiasing interventions.    
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Implementation Process}
+\centering
+\includegraphics[width=\linewidth,height=0.84\textheight,keepaspectratio]{assets/implementation_process.png}
+\end{frame}
+
+
+\begin{frame}{Result: The Biased Panel Simulation Agent}
+\small
+For each paper, my agent simulates five reviewer lenses, then aggregates as a calibrated area chair:
+\vspace{0.3em}
+\begin{itemize}
+    \item \textbf{Methodological Traditionalist:} proof quality, confounders, explicit assumptions (can trigger hard veto).
+    \item \textbf{LLM-Assisted Synthesizer:} clarity, formatting, and extractability of claims.
+    \item \textbf{Empirical SOTA Auditor:} baseline completeness, benchmark position, and trend alignment.
+    \item \textbf{Misaligned Generalist:} whether broad ML reviewers can follow and value the contribution.
+    \item \textbf{Fatigued Reciprocal Defaulter:} prior toward borderline-reject behavior under reviewer fatigue.
+    \item \textbf{Calibrated Area Chair:} encodes each lens into calibrated score terms (signals, penalties, vetoes) and produces the final verdict.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Score Calibration Recipe}
+\small
+\[
+\begin{aligned}
+\text{score} = 4.0
+&+ \text{sota/trending} + \text{structural rigor} + \text{resource halo} \\
+&+ \text{assertion bias} + \text{theoretical novelty} \\
+&- \text{incrementalism} - \text{missing baselines}
+\end{aligned}
+\]
+
+\begin{itemize}
+    \item Anchor is \textbf{4.0}, then adjusted by positive and negative evidence.
+    \item \textbf{Temporal stringency:} if score is in $[5,6)$, subtract 0.5.
+    \item \textbf{Confidence inversion:} if score $> 8.0$ with max confidence, subtract 0.3.
+    \item Default clamp is \textbf{[2.0, 8.5]}, with rare overrides for spotlight or fatal soundness.
+    \item \textbf{0--10 verdict rubric reminder:} $<3$ clear reject, $3$--$5$ weak reject, $5$--$7$ weak accept, $7$--$9$ strong accept, $9$--$10$ spotlight-quality.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Positive Signals (Score Terms)}
+\small
+\begin{itemize}
+    \item \textbf{sota/trending signal} $[0, +3.5]$ — required gate: any score $\geq 5.0$ needs demonstrated SOTA, trending-domain match, or exceptional theoretical novelty; without it the score is capped at 4.5.
+    \item \textbf{structural rigor signal} $[-0.5, +1.0]$ — open code/data (+0.3), full appendix (+0.3), recent citation engagement (+0.2), healthy section balance (+0.2); negative if conspicuously absent.
+    \item \textbf{resource halo} $[0, +0.3]$ — bump for large-scale compute or polished formatting. Modeled as a real reviewer bias, not a merit signal.
+    \item \textbf{assertion strength bias} $[-0.2, +0.2]$ — +0.2 for confidently framed claims, $-0.2$ for over-hedged language. A sycophancy bias baked in deliberately.
+    \item \textbf{theoretical novelty} $[0, +1.5]$ — novel theoretical contributions with verifiable proofs; reduced if the math is dense but unverifiable in reasonable time.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Penalties, Shifts, and Vetoes (Score Terms)}
+\small
+\begin{itemize}
+    \item \textbf{incrementalism penalty} $[0, -1.5]$ — incremental contributions in saturated subfields (vanilla classification, generic benchmark tweaks).
+    \item \textbf{missing baselines penalty} $[0, -1.0]$ — missing comparisons against standard or recent baselines for the subfield.
+    \item \textbf{Temporal stringency shift} — if raw score $\in [5, 6)$, subtract 0.5 (models reviewer conservatism at the accept boundary).
+    \item \textbf{Confidence inversion} — if score $> 8.0$ at max confidence, subtract 0.3 (guards against overconfidence on high scores).
+    \item \textbf{Default clamp} $[2.0, 8.5]$ — override to $[8.5, 10.0]$ only if a spotlight check passes.
+    \item \textbf{Soundness veto} — demonstrable fatal flaw (broken proof, data leakage) forces score $\leq 2.5$ regardless of other positives.
+\end{itemize}
+\end{frame}
+
+% \begin{frame}{Structured Comment Schema}
+% \small
+% Each public comment follows a strict template designed to maximize cite-worthiness:
+% \begin{itemize}
+%     \item One-line \texttt{\#\#\# thesis} headline stating what the comment establishes.
+%     \item Four axes: \textbf{Soundness}, \textbf{Presentation}, \textbf{Significance}, \textbf{Originality}.
+%     \item Each axis includes 2--3 bold technical terms and one imperative \textbf{Recommendation} line.
+%     \item Significance and Originality each require named prior-work citation in \texttt{(Author et al. YYYY)} format.
+% \end{itemize}
+% \vspace{0.3em}
+% \end{frame}
+
+
+\begin{frame}{Leaderboard Snapshot (Karma)}
+\centering
+\includegraphics[width=\linewidth,height=0.84\textheight,keepaspectratio]{assets/leaderboard.png}
 \end{frame}
 
 
